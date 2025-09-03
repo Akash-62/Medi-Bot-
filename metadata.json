@@ -1,0 +1,7 @@
+{
+  "name": "AuraMed by Akash S",
+  "description": "An AI-powered triage system that accepts user symptoms or prescription uploads, analyzes conditions using medical guidelines, provides personalized recommendations, and offers translation and text-to-speech in multiple languages.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
