@@ -1,94 +1,197 @@
 
-# AuraMed - AI Health Assistant
+ # 🩺 MediBot – AI Health Assistant
 
-**Developed by Akash S**
+> Intelligent, multilingual triage • medication insights • preventative health guidance (RAG‑powered)
 
-## 🚀 Overview
+**Developer:** Akash S
 
-AuraMed is a futuristic, AI-powered health assistant designed to provide intelligent, accessible, and multilingual health information. It combines a sophisticated user interface with the power of the Google Gemini API to offer three distinct modes of operation: Triage, Pharmacy, and Precautions.
+---
 
-## ✨ Key Features
+## ✨ Features
 
-- **Multi-Modal Input**: Interact with AuraMed using text, pill images, or voice-to-text dictation.
-- **Three Core AI Modes**:
-    1.  **Triage**: Describe symptoms or upload prescription images to receive an AI-driven triage analysis, including urgency level, recommendations, and potential drug interactions.
-    2.  **Pharmacy**: Identify medications from text or pill photos. Get detailed information on uses, dosage, side effects, and crucial warnings.
-    3.  **Precautions (RAG-Powered)**: Ask for preventative advice on any disease and receive reliable, accurate tips grounded in a curated knowledge base.
-- **Advanced Multilingual Support**: The entire user interface and all AI responses are available in English, Spanish, and French.
-- **On-Demand Translation**: Instantly translate any AI-generated report into Kannada, Hindi, Tamil, Telugu, or Malayalam.
-- **Natural Text-to-Speech**: Make information more accessible with a high-quality, human-like voice that reads results aloud in your selected language, speaking in natural sections for better comprehension.
-- **Futuristic UI/UX**: A stunning, modern interface featuring an animated aurora background, sleek glassmorphism effects, and fluid animations for an engaging user experience.
+- 🧠 **Three Expert Modes**  
+    - **Triage:** Symptom + prescription/image analysis → urgency level + recommendation + explanation + potential drug interactions.  
+    - **Pharmacy:** Identify a drug from text or pill photo → uses, mechanism, dosage (adult/pediatric), side effects, critical warnings.  
+    - **Precautions (RAG):** Reliable preventative advice grounded in a curated knowledge base (no free‑floating hallucinations).
+- 🗣️ **Voice Input:** Web Speech API for real‑time dictation.
+- 🖼️ **Document & Image Uploads:** Pill photos, prescriptions, lab reports (images, PDF, DOC, DOCX, TXT, RTF, ODT).
+- 🌐 **Multilingual UI & Responses:** English, Spanish, French (core); plus on‑demand translation to Kannada, Hindi, Tamil, Telugu, Malayalam.
+- 🔊 **Text‑to‑Speech Playback:** Structured, paced reading for accessibility.
+- 🧩 **RAG Grounding:** Precautions answers are context‑anchored via local retrieval (`services/knowledgeBase.ts`).
+- 🛡️ **Structured JSON Parsing:** Ensures predictable rendering & safer downstream handling.
+- ♿ **Accessible & Responsive:** Mobile‑first glass UI with reduced-motion stability (no input field jumping).
+- 🔐 **Local-Only Knowledge Source:** No external call for RAG retrieval—privacy friendly.
 
-## 🛠️ Tech Stack
+---
 
-- **Frontend**: React, TypeScript, Tailwind CSS
-- **AI Backend**: Google Gemini API (`gemini-2.5-flash`)
-- **Architecture**: Retrieval-Augmented Generation (RAG) for the Precautions mode.
-- **Browser APIs**:
-    - Web Speech API (for voice-to-text)
-    - Web Speech Synthesis API (for text-to-speech)
+## � Quick Start
 
-## 🧠 RAG Architecture (Precautions Mode)
+### Prerequisites
+| Requirement | Version |
+|-------------|---------|
+| Node.js     | 18+     |
+| npm / yarn  | Latest  |
 
-To ensure the highest level of accuracy and reliability, AuraMed's "Precautions" mode is powered by a **Retrieval-Augmented Generation (RAG)** pipeline. This advanced architecture grounds the AI's responses in a curated, internal knowledge base, minimizing hallucinations and providing trustworthy health information.
+### Install & Run
+```bash
+git clone <your-repo-url>
+cd Medi-bot-
+npm install
 
-### How It Works:
+# Environment variable (development)
+echo API_KEY=your_gemini_api_key_here > .env.local
 
-1.  **User Query**: The user asks for precautions for a specific condition (e.g., "precautions for hypertension").
-2.  **Retrieve**: A client-side RAG service performs a keyword search against a local, curated **Knowledge Base** (`services/knowledgeBase.ts`) to find the most relevant health document.
-3.  **Augment**: The retrieved document's content is injected directly into a specialized system prompt for the Gemini model. The AI is explicitly instructed to base its answer *primarily* on this provided context.
-4.  **Generate**: The Gemini model processes the augmented prompt and generates a structured, reliable response that adheres to the curated information.
+npm run dev
+```
+Open: http://localhost:5173
 
-This process ensures that the advice provided is not just generated, but is **retrieved, verified, and then articulated** by the AI.
+### Production Build
+```bash
+npm run build
+npm run preview
+```
 
-## 💡 How to Use
+---
 
-1.  **Select a Mode**: Use the intuitive switcher in the header to choose between `Triage`, `Pharmacy`, or `Precautions`.
-2.  **Choose a Language**: Select your preferred language for the interface and AI responses.
-3.  **Interact**:
-    - Type your query in the input box.
-    - Click the paperclip icon to upload an image (e.g., a prescription or a pill).
-    - Click the microphone icon to speak your query.
-4.  **Review the Results**: AuraMed will provide a structured, detailed analysis in a custom card.
-5.  **Translate & Listen**: Use the controls on the result card to translate the information into various languages or have it read aloud.
+## 🔧 Configuration
 
-## 🤖 Example AI Responses
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `API_KEY` | Google Gemini API key (used by `geminiService.ts`) | Yes |
 
-Below are examples of the detailed, structured advice AuraMed provides in **Precautions Mode**.
+> Note: In Vite, variables normally use the `VITE_` prefix. This project accesses `process.env.API_KEY` directly. If you deploy and the key is undefined in the browser bundle, switch to `import.meta.env.VITE_API_KEY` in code and rename the env var accordingly.
 
-### Example 1: Precautions for Diabetes
+---
 
--   **Condition**: Diabetes Mellitus
--   **Overview**: A chronic condition affecting how your body regulates blood sugar. Management involves lifestyle choices to maintain stable glucose levels and prevent complications.
--   **Dietary Recommendations**:
-    -   Focus on complex carbs (whole grains, vegetables).
-    -   Increase fiber intake to control blood sugar.
-    -   Choose lean proteins like fish and beans.
-    -   Limit sugars and highly processed foods.
--   **Lifestyle Adjustments**:
-    -   Aim for 150 minutes of moderate exercise per week (e.g., brisk walking).
-    -   Maintain a healthy weight.
-    -   Manage stress through relaxation techniques like meditation or yoga.
-    -   Ensure 7-9 hours of quality sleep per night.
--   **Medical Check-ups**:
-    -   Monitor blood sugar levels as advised by your doctor.
-    -   Schedule annual dilated eye exams to check for retinopathy.
-    -   Perform daily foot checks for sores or changes.
+## 🧠 RAG (Precautions Mode)
 
-### Example 2: Precautions for the Common Cold
+1. 🔍 **Retrieve:** Lightweight keyword matching against the local curated knowledge base.  
+2. 🧾 **Augment:** Retrieved passage injected into a strict system instruction.  
+3. 🧪 **Generate:** Gemini returns strictly structured JSON (disease, overview, hygiene, diet, lifestyle, checkups).  
+4. 🛑 **Guardrails:** If context missing → graceful fallback with disclaimer.
 
--   **Condition**: Common Cold
--   **Overview**: A mild viral infection of the nose and throat. It's typically harmless, with symptoms resolving in about a week. Prevention focuses on hygiene and immune support.
--   **Hygiene Practices**:
-    -   Wash hands frequently with soap and water for at least 20 seconds.
-    -   Use an alcohol-based hand sanitizer when soap is unavailable.
-    -   Avoid touching your eyes, nose, and mouth with unwashed hands.
-    -   Clean and disinfect frequently touched surfaces (doorknobs, phones).
--   **Lifestyle Adjustments**:
-    -   Get adequate rest to support your immune system.
-    -   Stay hydrated by drinking plenty of water and clear broths.
-    -   Eat a balanced diet rich in vitamins and minerals.
-    -   Avoid close contact with people who are sick.
--   **Medical Check-ups**:
-    -   The common cold usually does not require medical attention.
-    -   Consult a doctor if symptoms are severe, last more than 10 days, or if you have a high fever.
+Benefits: Lower hallucination risk • Deterministic structure • Easy post‑processing.
+
+---
+
+## 🏗️ Architecture Overview
+
+- React + TypeScript + Vite frontend.
+- Service layer: `geminiService.ts` (schemas + mode-specific system prompts + error normalization).
+- RAG helper: `ragService.ts` + `knowledgeBase.ts` (local retrieval).
+- Mode‑aware chat orchestrator (messages + typing indicator + result cards).
+- Voice capture & speech synthesis utilities via browser APIs.
+
+---
+
+## �️ Tech Stack
+- **Framework:** React + TypeScript
+- **Build:** Vite
+- **Styling:** Tailwind utility classes + custom glass/gradient CSS
+- **AI Model:** `gemini-2.5-flash`
+- **APIs:** Web Speech Recognition / Speech Synthesis
+- **Data Flow:** Local state (no external DB)
+
+---
+
+## 💡 Usage Flow
+1. Select mode (Triage | Pharmacy | Precautions).  
+2. (Optional) Switch UI language.  
+3. Enter text / speak / upload image or document.  
+4. Receive structured card (urgency / medication facts / prevention set).  
+5. (Optional) Translate or listen via TTS.  
+6. Start a new query—previous messages retained until cleared.
+
+---
+
+## 🧪 Structured Outputs (Examples)
+
+### Triage (Example)
+```json
+{
+    "urgencyLevel": "Routine",
+    "recommendation": "Monitor symptoms at home and hydrate.",
+    "explanation": "Disclaimer: This is an AI-generated analysis... mild viral indicators without red flags.",
+    "drugInteractions": [
+        { "drugs": "Ibuprofen + Aspirin", "risk": "Increased bleeding risk", "source": "Internal Model Reasoning" }
+    ],
+    "citedSources": ["Source A", "Source B"]
+}
+```
+
+### Pharmacy (Example)
+```json
+{
+    "medicationName": "Amoxicillin",
+    "commonUses": ["Bacterial infections"],
+    "mechanismOfAction": "Inhibits bacterial cell wall synthesis.",
+    "dosageInformation": { "adult": "500mg q8h", "pediatric": "Weight-based" },
+    "commonSideEffects": ["Nausea", "Rash"],
+    "crucialWarnings": ["Allergy risk in penicillin-sensitive patients"]
+}
+```
+
+### Precautions (Example)
+```json
+{
+    "diseaseName": "Hypertension",
+    "overview": "Chronic elevation of arterial pressure requiring lifestyle and sometimes pharmacologic management.",
+    "hygienePractices": ["Limit sodium", "Hand hygiene"],
+    "dietaryRecommendations": ["DASH-style diet", "High potassium foods"],
+    "lifestyleAdjustments": ["Regular aerobic exercise", "Stress reduction"],
+    "medicalCheckups": ["Routine BP monitoring", "Annual cardiovascular assessment"]
+}
+```
+
+---
+
+## ⚙️ Error Handling Philosophy
+- Consistent JSON fallback (even on model hiccups).
+- User‑safe messaging (no internal stack traces).
+- Graceful degradation when API key misconfigured.
+
+---
+
+## 📱 Responsive & Stability Notes
+- Fixed-height, non-animated input (eliminates jump & layout shift).
+- Hidden scrollbars for immersive feel.
+- Progressive enhancement: animations minimized where stability prioritized.
+
+---
+
+## 🚀 Performance Practices
+- Lean bundle via Vite.
+- No runtime backend round-trip for retrieval.
+- Caching layer for translations (simple in-memory map).
+- Avoids unnecessary re-renders (memoized mode-bound strings formerly—now simplified for stability).
+
+---
+
+## 🔮 Roadmap Ideas
+- [ ] Optional dark/intense contrast accessibility toggle
+- [ ] Offline fallback knowledge pack
+- [ ] Export/share structured reports (PDF)
+- [ ] Add more languages (Arabic, German, Portuguese)
+- [ ] Usage analytics (privacy-preserving)
+
+---
+
+## 🧾 Medical Disclaimer
+MediBot is **not** a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with questions regarding a medical condition. Emergency symptoms require immediate professional attention.
+
+---
+
+## 👨‍💻 Developer
+**Akash S** – Full Stack Developer
+
+---
+
+## 📄 License
+MIT License
+
+---
+
+<div align="center">
+    <strong>Made with care for accessible, trustworthy health insights 💙</strong>
+</div>
+
