@@ -6,15 +6,25 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import type { AppMode } from './types';
 
 const App: React.FC = () => {
-  const [mode, setMode] = useState<AppMode>('triage');
+  const [mode, setMode] = useState<AppMode>(() => {
+    // Persist mode across refreshes
+    const savedMode = localStorage.getItem('medibot-mode');
+    return (savedMode as AppMode) || 'triage';
+  });
+
+  const handleModeChange = (newMode: AppMode) => {
+    setMode(newMode);
+    localStorage.setItem('medibot-mode', newMode);
+  };
 
   return (
     <LanguageProvider>
-      <div className="flex flex-col h-screen max-h-dvh font-sans">
-        <Header mode={mode} setMode={setMode} />
-        <main className="flex-1 overflow-hidden w-full px-2 sm:px-4 md:px-6 lg:px-0 mx-auto max-w-4xl pb-[env(safe-area-inset-bottom)]">
+      <div className="app-shell flex flex-col font-sans overflow-hidden h-screen">
+        <Header mode={mode} setMode={handleModeChange} />
+        <main className="flex-1 overflow-hidden w-full">
           <div className="h-full flex flex-col">
-            <ChatInterface mode={mode} />
+            {/* FIX: Key forces clean remount on mode change to prevent state leakage */}
+            <ChatInterface key={mode} mode={mode} />
           </div>
         </main>
       </div>

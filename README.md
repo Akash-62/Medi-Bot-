@@ -1,94 +1,231 @@
 
-# AuraMed - AI Health Assistant
+# 🩺 MediBot – AI Health Assistant
+AI-driven, multilingual medical triage & health guidance platform.
 
-**Developed by Akash S**
+**Deploy:** Vite + React + TypeScript
+
+---
 
 ## 🚀 Overview
+MediBot is an intelligent health assistant that provides instant medical triage, medication information, and preventive health guidance. Powered by advanced AI trained on clinical guidelines, it offers multilingual support with native voice capabilities for accessibility.
 
-AuraMed is a futuristic, AI-powered health assistant designed to provide intelligent, accessible, and multilingual health information. It combines a sophisticated user interface with the power of the Google Gemini API to offer three distinct modes of operation: Triage, Pharmacy, and Precautions.
+---
 
-## ✨ Key Features
+## ✨ Features
 
-- **Multi-Modal Input**: Interact with AuraMed using text, pill images, or voice-to-text dictation.
-- **Three Core AI Modes**:
-    1.  **Triage**: Describe symptoms or upload prescription images to receive an AI-driven triage analysis, including urgency level, recommendations, and potential drug interactions.
-    2.  **Pharmacy**: Identify medications from text or pill photos. Get detailed information on uses, dosage, side effects, and crucial warnings.
-    3.  **Precautions (RAG-Powered)**: Ask for preventative advice on any disease and receive reliable, accurate tips grounded in a curated knowledge base.
-- **Advanced Multilingual Support**: The entire user interface and all AI responses are available in English, Spanish, and French.
-- **On-Demand Translation**: Instantly translate any AI-generated report into Kannada, Hindi, Tamil, Telugu, or Malayalam.
-- **Natural Text-to-Speech**: Make information more accessible with a high-quality, human-like voice that reads results aloud in your selected language, speaking in natural sections for better comprehension.
-- **Futuristic UI/UX**: A stunning, modern interface featuring an animated aurora background, sleek glassmorphism effects, and fluid animations for an engaging user experience.
+| Area | Description |
+|------|-------------|
+| **🧠 AI Triage** | Symptom analysis → urgency level + recommendation + clinical reasoning |
+| **💊 Pharmacy Mode** | Pill identification + usage + dosage + side effects + warnings |
+| **🛡️ Precautions (RAG)** | Evidence-based preventive health guidance from curated medical knowledge |
+| **🗣️ Voice Input** | Real-time voice dictation via Web Speech API |
+| **🖼️ Document Upload** | Analyze prescriptions, lab reports, pill photos (PDF, DOC, images) |
+| **🌐 Multilingual** | English, Spanish, French + Hindi, Tamil, Telugu, Malayalam, Kannada |
+| **🔊 Native TTS** | ResponsiveVoice API for Indian & European language text-to-speech |
+| **📱 Responsive** | Mobile-first glassmorphism UI with accessibility features |
+| **⚡ Fast Analysis** | Optimized AI inference for quick medical insights |
 
-## 🛠️ Tech Stack
+---
 
-- **Frontend**: React, TypeScript, Tailwind CSS
-- **AI Backend**: Google Gemini API (`gemini-2.5-flash`)
-- **Architecture**: Retrieval-Augmented Generation (RAG) for the Precautions mode.
-- **Browser APIs**:
-    - Web Speech API (for voice-to-text)
-    - Web Speech Synthesis API (for text-to-speech)
+## 🧱 Tech Stack
+- **React 19** + **TypeScript**
+- **Vite** build tool
+- **Tailwind CSS** + custom glassmorphism styles
+- **AI-powered** medical analysis with oncology specialization
+- **ResponsiveVoice API** for multilingual TTS
+- **RAG architecture** for grounded medical knowledge
+- **Deployed on Vercel**
 
-## 🧠 RAG Architecture (Precautions Mode)
+---
 
-To ensure the highest level of accuracy and reliability, AuraMed's "Precautions" mode is powered by a **Retrieval-Augmented Generation (RAG)** pipeline. This advanced architecture grounds the AI's responses in a curated, internal knowledge base, minimizing hallucinations and providing trustworthy health information.
+## ⚙️ Prerequisites
+- **Node.js 18+** (recommended LTS)
+- Modern browser with Web Speech API support
 
-### How It Works:
+---
 
-1.  **User Query**: The user asks for precautions for a specific condition (e.g., "precautions for hypertension").
-2.  **Retrieve**: A client-side RAG service performs a keyword search against a local, curated **Knowledge Base** (`services/knowledgeBase.ts`) to find the most relevant health document.
-3.  **Augment**: The retrieved document's content is injected directly into a specialized system prompt for the Gemini model. The AI is explicitly instructed to base its answer *primarily* on this provided context.
-4.  **Generate**: The Gemini model processes the augmented prompt and generates a structured, reliable response that adheres to the curated information.
+## 🔐 Configuration
+Create a `.env` file in the root directory:
 
-This process ensures that the advice provided is not just generated, but is **retrieved, verified, and then articulated** by the AI.
+```bash
+# Required: AI API Key (contact maintainer)
+VITE_GROQ_API_KEY=your_api_key_here
+```
 
-## 💡 How to Use
+> **Note:** API keys are required for AI functionality. Contact the maintainer for setup instructions.
 
-1.  **Select a Mode**: Use the intuitive switcher in the header to choose between `Triage`, `Pharmacy`, or `Precautions`.
-2.  **Choose a Language**: Select your preferred language for the interface and AI responses.
-3.  **Interact**:
-    - Type your query in the input box.
-    - Click the paperclip icon to upload an image (e.g., a prescription or a pill).
-    - Click the microphone icon to speak your query.
-4.  **Review the Results**: AuraMed will provide a structured, detailed analysis in a custom card.
-5.  **Translate & Listen**: Use the controls on the result card to translate the information into various languages or have it read aloud.
+---
 
-## 🤖 Example AI Responses
+## �️ Local Development
 
-Below are examples of the detailed, structured advice AuraMed provides in **Precautions Mode**.
+### Quick Start
+```bash
+git clone https://github.com/Akash-62/Medi-Bot-.git
+cd Medi-Bot-
+npm install
+npm run dev
+```
+**Open:** http://localhost:5173
 
-### Example 1: Precautions for Diabetes
+---
 
--   **Condition**: Diabetes Mellitus
--   **Overview**: A chronic condition affecting how your body regulates blood sugar. Management involves lifestyle choices to maintain stable glucose levels and prevent complications.
--   **Dietary Recommendations**:
-    -   Focus on complex carbs (whole grains, vegetables).
-    -   Increase fiber intake to control blood sugar.
-    -   Choose lean proteins like fish and beans.
-    -   Limit sugars and highly processed foods.
--   **Lifestyle Adjustments**:
-    -   Aim for 150 minutes of moderate exercise per week (e.g., brisk walking).
-    -   Maintain a healthy weight.
-    -   Manage stress through relaxation techniques like meditation or yoga.
-    -   Ensure 7-9 hours of quality sleep per night.
--   **Medical Check-ups**:
-    -   Monitor blood sugar levels as advised by your doctor.
-    -   Schedule annual dilated eye exams to check for retinopathy.
-    -   Perform daily foot checks for sores or changes.
+## 📦 Available Scripts
 
-### Example 2: Precautions for the Common Cold
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Start dev server (Vite) |
+| `npm run build` | Production build (outputs to `dist/`) |
+| `npm run preview` | Preview production build locally |
 
--   **Condition**: Common Cold
--   **Overview**: A mild viral infection of the nose and throat. It's typically harmless, with symptoms resolving in about a week. Prevention focuses on hygiene and immune support.
--   **Hygiene Practices**:
-    -   Wash hands frequently with soap and water for at least 20 seconds.
-    -   Use an alcohol-based hand sanitizer when soap is unavailable.
-    -   Avoid touching your eyes, nose, and mouth with unwashed hands.
-    -   Clean and disinfect frequently touched surfaces (doorknobs, phones).
--   **Lifestyle Adjustments**:
-    -   Get adequate rest to support your immune system.
-    -   Stay hydrated by drinking plenty of water and clear broths.
-    -   Eat a balanced diet rich in vitamins and minerals.
-    -   Avoid close contact with people who are sick.
--   **Medical Check-ups**:
-    -   The common cold usually does not require medical attention.
-    -   Consult a doctor if symptoms are severe, last more than 10 days, or if you have a high fever.
+---
+
+## ☁️ Deployment (Vercel)
+
+1. Push to `main` on GitHub
+2. Import the repo into Vercel (Framework: Vite detected)
+3. Configure environment variables in Vercel dashboard:
+   - `VITE_GROQ_API_KEY`
+4. Deploy. Output directory: `dist`
+
+**Live Demo:** [https://medi-bot.vercel.app](https://medi-bot.vercel.app)
+
+---
+
+## 💡 Usage Flow
+
+1. **Select Mode:** Triage | Pharmacy | Precautions
+2. **Input:** Type, speak, or upload medical documents/images
+3. **AI Analysis:** Get structured medical insights with urgency levels
+4. **Translate:** View results in your preferred language
+5. **Listen:** Text-to-speech in native languages (including Indian languages)
+6. **Continue:** Ask follow-up questions or start new analysis
+
+---
+
+## 🧪 Structured Outputs
+
+### Triage Analysis
+```json
+{
+  "urgencyLevel": "Priority",
+  "recommendation": "See a doctor within 24-48 hours",
+  "explanation": "Clinical reasoning with differential diagnosis...",
+  "possibleCancerTypes": ["Type 1 - reasoning", "Type 2 - reasoning"],
+  "likelyNonCancerCauses": ["Benign condition 1", "Benign condition 2"],
+  "treatmentInsights": ["Treatment approach 1", "Management strategy 2"],
+  "citedSources": ["NCCN Guidelines", "Mayo Clinic", "PubMed"]
+}
+```
+
+### Medication Info
+```json
+{
+  "medicationName": "Amoxicillin",
+  "commonUses": ["Bacterial infections"],
+  "mechanismOfAction": "Inhibits bacterial cell wall synthesis",
+  "dosageInformation": {
+    "adult": "500mg every 8 hours",
+    "pediatric": "Weight-based dosing"
+  },
+  "commonSideEffects": ["Nausea", "Diarrhea", "Rash"],
+  "crucialWarnings": ["Penicillin allergy contraindication"]
+}
+```
+
+### Prevention Guidance
+```json
+{
+  "diseaseName": "Hypertension",
+  "overview": "Chronic condition requiring lifestyle management",
+  "hygienePractices": ["Regular BP monitoring", "Stress reduction"],
+  "dietaryRecommendations": ["DASH diet", "Low sodium", "High potassium"],
+  "lifestyleAdjustments": ["Regular exercise", "Weight management"],
+  "medicalCheckups": ["Annual cardiovascular assessment"]
+}
+```
+
+---
+
+## 🏗️ Architecture
+
+- **Frontend:** React + TypeScript + Vite
+- **AI Service Layer:** Mode-specific prompts + structured JSON parsing
+- **RAG System:** Local knowledge base retrieval for grounded responses
+- **TTS Integration:** ResponsiveVoice API + browser fallback
+- **State Management:** React hooks + context API
+- **Styling:** Tailwind utilities + custom glassmorphism CSS
+
+---
+
+## 🧪 Future Enhancements (Roadmap)
+
+- [ ] Real-time doctor consultation integration
+- [ ] Health tracking & symptom history
+- [ ] PDF export for medical reports
+- [ ] Offline mode with cached knowledge base
+- [ ] User authentication & personalized health profiles
+- [ ] Integration with wearable health devices
+- [ ] Medication reminder system
+- [ ] Emergency service quick dial
+- [ ] More language support (Arabic, German, Portuguese)
+- [ ] Dark mode accessibility toggle
+
+---
+
+## 🤝 Contributing
+
+PRs and issue reports welcome! Suggested flow:
+
+1. **Fork** the repo
+2. **Create** a feature branch: `git checkout -b feat/your-feature`
+3. **Commit** changes: `git commit -m "feat: add your feature"`
+4. **Push:** `git push origin feat/your-feature`
+5. **Open** a Pull Request
+
+Please write clear commit messages and keep changes focused.
+
+---
+
+## �️ Security & Privacy
+
+- ✅ Secure API credential management
+- ✅ Input validation for user-submitted data
+- ✅ Environment variables for sensitive configuration
+- ✅ No storage of personal health information
+- ✅ Regular dependency updates for security patches
+- ✅ HTTPS-only communication with AI services
+
+---
+
+## 🧾 Medical Disclaimer
+
+**IMPORTANT:** MediBot is **not** a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with questions regarding a medical condition. Emergency symptoms require immediate professional attention.
+
+This AI assistant is for educational and informational purposes only.
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+## 👨‍💻 Maintainer
+
+**Akash S** – Full Stack Developer  
+GitHub: [@Akash-62](https://github.com/Akash-62)
+
+---
+
+## � Support
+
+Found a bug or have an idea? [Open an issue](https://github.com/Akash-62/Medi-Bot-/issues) or start a [discussion](https://github.com/Akash-62/Medi-Bot-/discussions).
+
+---
+
+<div align="center">
+  <strong>Made with care for accessible, trustworthy health insights 💙</strong>
+  <br><br>
+  <sub>Enjoy using MediBot! 🩺</sub>
+</div>

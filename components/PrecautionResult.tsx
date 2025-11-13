@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { PrecautionResultData } from '../types';
-import { useLanguage, outputLanguages, OutputLocale } from '../contexts/LanguageContext';
-import { translateText } from '../services/geminiService';
+import { useLanguage, OutputLocale, outputLanguages } from '../contexts/LanguageContext';
+import { translateText } from '../services/llmService';
+import { speakInSectionsWithAPI, cancelSpeech, isLanguageSupported, type SupportedTTSLanguage } from '../services/ttsService';
 
 interface PrecautionResultProps {
   result: PrecautionResultData;
 }
 
-const Section: React.FC<{ title: string; icon: JSX.Element; children: React.ReactNode; }> = ({ title, icon, children }) => (
+const Section: React.FC<{ title: string; icon: React.ReactElement; children: React.ReactNode; }> = ({ title, icon, children }) => (
     <div className="py-4">
         <h3 className="flex items-center text-md font-semibold mb-2 text-slate-300">
             {icon}
@@ -30,7 +31,7 @@ const PrecautionResult: React.FC<PrecautionResultProps> = ({ result }) => {
   const utteranceQueue = useRef<SpeechSynthesisUtterance[]>([]);
   
   useEffect(() => {
-    return () => { speechSynthesis.cancel(); };
+    return () => { cancelSpeech(); };
   }, []);
 
   useEffect(() => {
@@ -38,39 +39,63 @@ const PrecautionResult: React.FC<PrecautionResultProps> = ({ result }) => {
     setCurrentDisplayLocale(uiLocale);
   }, [result, uiLocale]);
 
-  const speakInSections = (sections: {title: string, content: string | string[]}[], lang: OutputLocale | 'en' | 'es' | 'fr') => {
+  const speakInSections = async (sections: {title: string, content: string | string[]}[], lang: OutputLocale | 'en' | 'es' | 'fr') => {
     if (isSpeaking) {
-      speechSynthesis.cancel();
+      cancelSpeech();
       setIsSpeaking(false);
       return;
     }
+
+    setIsSpeaking(true);
+
+    const langCodeMap: { [key: string]: SupportedTTSLanguage } = {
+      'kn': 'kn-IN', 'hi': 'hi-IN', 'ta': 'ta-IN', 'te': 'te-IN', 'ml': 'ml-IN',
+      'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR'
+    };
+
+    const ttsLangCode = langCodeMap[lang] || 'en-US';
+    
+    // Format sections properly for TTS
+    const formattedSections = sections.map(section => ({
+      title: section.title,
+      content: Array.isArray(section.content) ? section.content.join('. ') : section.content
+    }));
+
+    try {
+      if (isLanguageSupported(ttsLangCode)) {
+        await speakInSectionsWithAPI(formattedSections, ttsLangCode, () => {
+          setIsSpeaking(false);
+        });
+      } else {
+        fallbackToBrowserTTS(formattedSections, ttsLangCode);
+      }
+    } catch (error) {
+      console.error('[TTS] Error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const fallbackToBrowserTTS = (sections: {title: string, content: string}[], langCode: string) => {
     const allVoices = speechSynthesis.getVoices();
     if (allVoices.length === 0) {
-      setTimeout(() => speakInSections(sections, lang), 100);
+      setTimeout(() => fallbackToBrowserTTS(sections, langCode), 100);
       return;
     }
-    const langCode = lang in outputLanguages ? outputLanguages[lang as OutputLocale]?.voiceCode : { en: 'en-US', es: 'es-ES', fr: 'fr-FR' }[lang];
     
-    // --- 1. Prioritize Higher-Quality Voices ---
     const voicesForLang = allVoices.filter(v => v.lang.startsWith(langCode.split('-')[0]));
     const nativeVoice = voicesForLang.find(v => v.lang === langCode);
-    const qualityKeywords = ['Google', 'Microsoft', 'Apple', 'Neural', 'Online', 'Premium'];
+    const qualityKeywords = ['Google', 'Microsoft', 'Apple', 'Neural'];
     const highQualityVoice = voicesForLang.find(v => qualityKeywords.some(keyword => v.name.includes(keyword))) || nativeVoice;
     const bestVoice = highQualityVoice || voicesForLang[0];
 
-    // --- 2. Implement Section-Based Speaking with Introductions ---
     utteranceQueue.current = sections.map(section => {
-      const contentString = Array.isArray(section.content) ? section.content.join('. ') : section.content;
-      const textToSpeak = `${section.title}: ${contentString}`;
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      const utterance = new SpeechSynthesisUtterance(`${section.title}: ${section.content}`);
       utterance.lang = langCode;
       if (bestVoice) utterance.voice = bestVoice;
-      // --- 4. Adjust Speech Rate for Clarity ---
       utterance.rate = 0.9;
       return utterance;
     });
 
-    // --- 3. Ensure Natural Pauses Between Sections ---
     const speakNext = () => {
       if (utteranceQueue.current.length > 0) {
         const utterance = utteranceQueue.current.shift()!;
@@ -81,7 +106,6 @@ const PrecautionResult: React.FC<PrecautionResultProps> = ({ result }) => {
       }
     };
     
-    setIsSpeaking(true);
     speakNext();
   };
 

@@ -18,11 +18,11 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onSugges
     return (
       <div className="flex items-end space-x-3 max-w-2xl animate-fadeInUp">
         <BotIcon />
-        <div className="px-4 py-3 rounded-2xl bg-slate-800/60 backdrop-blur-sm">
-          <div className="flex items-center justify-center space-x-1.5">
-            <span className="w-2 h-2 bg-sky-400/80 rounded-full typing-dot" style={{ animationDelay: '-0.3s' }}></span>
-            <span className="w-2 h-2 bg-sky-400/80 rounded-full typing-dot" style={{ animationDelay: '-0.15s' }}></span>
-            <span className="w-2 h-2 bg-sky-400/80 rounded-full typing-dot"></span>
+        <div className="px-5 py-3 rounded-2xl bg-slate-800/40 backdrop-blur-md border border-slate-700/30">
+          <div className="flex items-center justify-center space-x-2">
+            <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '1s' }}></span>
+            <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '1s' }}></span>
+            <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s', animationDuration: '1s' }}></span>
           </div>
         </div>
       </div>
@@ -34,24 +34,24 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onSugges
       <div className="flex-shrink-0 self-end">
         {isUser ? <UserIcon /> : <BotIcon />}
       </div>
-      <div className={`p-0.5 rounded-2xl max-w-[80vw] sm:max-w-[72%] md:max-w-[65%] ${isUser ? 'bg-gradient-to-br from-sky-600 to-cyan-500' : 'bg-gradient-to-br from-slate-700 to-slate-800'}`}>
-         <div className={`p-3 sm:p-4 rounded-[15px] break-words ${isUser ? 'text-white' : 'bg-[#1e293b] text-slate-200'}`}>
-            {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
+      <div className={`rounded-2xl max-w-[85vw] sm:max-w-[75%] md:max-w-[70%] shadow-lg ${isUser ? 'bg-gradient-to-br from-cyan-600 to-blue-600' : 'bg-slate-800/60 backdrop-blur-md border border-slate-700/50'}`}>
+         <div className={`p-4 rounded-2xl ${isUser ? 'text-white' : 'text-slate-100'}`}>
+            {message.text && <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>}
             {message.imagePreview && (
-              <div className="my-2">
-                <img src={message.imagePreview} alt="User upload" className="rounded-lg max-w-xs" />
+              <div className="my-3">
+                <img src={message.imagePreview} alt="User upload" className="rounded-xl max-w-xs border border-white/20" />
               </div>
             )}
             {message.triageResult && <TriageResult result={message.triageResult} />}
             {message.medicationResult && <MedicationResult result={message.medicationResult} />}
             {message.precautionResult && <PrecautionResult result={message.precautionResult} />}
             {message.suggestions && onSuggestionClick && (
-              <div className="mt-4 pt-3 border-t border-slate-700/50 flex flex-wrap gap-2">
+              <div className="mt-4 pt-4 border-t border-slate-600/40 flex flex-wrap gap-2">
                 {message.suggestions.map((suggestion, index) => (
                   <button
                     key={index}
                     onClick={() => onSuggestionClick(suggestion.text)}
-                    className="px-3 py-1.5 text-sm text-sky-200 bg-sky-800/40 rounded-full hover:bg-sky-700/60 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-500"
+                    className="px-3.5 py-2 text-sm text-cyan-100 bg-cyan-900/30 rounded-xl hover:bg-cyan-800/50 backdrop-blur-sm border border-cyan-700/30 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   >
                     {suggestion.text}
                   </button>

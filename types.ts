@@ -20,6 +20,10 @@ export interface TriageResultData {
   explanation: string;
   drugInteractions: DrugInteraction[];
   citedSources: string[];
+  // Oncology-specific fields (optional for backward compatibility)
+  possibleCancerTypes?: string[];
+  likelyNonCancerCauses?: string[];
+  treatmentInsights?: string[];
 }
 
 export interface MedicationResultData {

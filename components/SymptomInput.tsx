@@ -44,53 +44,12 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
   const isSpeechSupported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
   const prevIsRecording = useRef(isRecording);
 
-  const placeholderSuggestions = useMemo(() => {
-    switch (mode) {
-      case 'triage':
-        return [
-          "e.g., 'I have a headache and a fever...'",
-          "e.g., 'My child has a rash on their arm...'",
-          "e.g., 'I'm feeling short of breath after walking...'",
-          "e.g., 'Upload a photo of a prescription to check for interactions...'",
-          "e.g., 'I have a sharp pain in my stomach...'"
-        ];
-      case 'pharmacy':
-        return [
-          "e.g., 'What is Metformin used for?'",
-          "e.g., 'Identify this pill... (then upload an image)'",
-          "e.g., 'What are the side effects of Ibuprofen?'",
-          "e.g., 'Can I take Tylenol with this prescription?'",
-          "e.g., 'How does Lipitor work?'"
-        ];
-      case 'precautions':
-        return [
-          "e.g., 'Precautions for Diabetes'",
-          "e.g., 'How can I prevent the flu?'",
-          "e.g., 'What are the risks of high blood pressure?'",
-          "e.g., 'Best practices for avoiding a common cold'",
-          "e.g., 'Lifestyle changes for a healthy heart'"
-        ];
-      default:
-        return [""];
-    }
-  }, [mode]);
-
-  const [placeholder, setPlaceholder] = useState(placeholderSuggestions[0]);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderIndex(prevIndex => (prevIndex + 1) % placeholderSuggestions.length);
-    }, 3000); // Change suggestion every 3 seconds
-    return () => clearInterval(interval);
-  }, [placeholderSuggestions.length]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setPlaceholder(placeholderSuggestions[placeholderIndex]);
-    }, 150); // Stagger the update for a fade effect
-    return () => clearTimeout(timeout);
-  }, [placeholderIndex, placeholderSuggestions]);
+  // Responsive placeholders - shorter for mobile
+  const currentPlaceholder = 
+    mode === 'triage' ? "Describe your symptoms..." :
+    mode === 'pharmacy' ? "Ask about medications..." :
+    mode === 'precautions' ? "Get health prevention tips..." :
+    "Ask MediBot anything...";
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -200,22 +159,26 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
           </button>
         </div>
       )}
-      <div className="chat-input-shell">
+  <div className="chat-input-shell chat-compact">
         <div className="chat-input-surface" style={{flexWrap:'wrap'}}>
-          <div className="placeholder-layer">
-            <span className="placeholder-rotator" key={placeholderIndex}>{placeholder}</span>
-          </div>
           <textarea
             ref={textareaRef}
             value={text}
             onChange={handleTextChange}
-            placeholder={placeholder}
+            placeholder={currentPlaceholder}
             className="chat-textarea"
             rows={1}
             disabled={isLoading}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
           />
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} style={{display:'none'}} id="file-upload" />
+          <input 
+            type="file" 
+            accept="image/*,.pdf,.doc,.docx,.txt,.rtf,.odt" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            style={{display:'none'}} 
+            id="file-upload" 
+          />
           <button
             type="button"
             onClick={handleMicClick}
@@ -233,8 +196,9 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
-            className="icon-btn"
-            aria-label={t('uploadLabel')}
+            className="icon-btn upload-btn"
+            aria-label="Upload documents (PDF, DOCX, Images)"
+            title="📄 Upload medical documents, prescriptions, lab results (PDF, DOCX, Images)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" strokeWidth="1.6" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32" /><path d="M8.55 18.31l-.01.01" /><path d="M13.54 8.37l-7.81 7.81a1.5 1.5 0 002.122 2.122l7.81-7.81" /></svg>
           </button>

@@ -1,20 +1,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { MedicationResultData } from '../types';
-import { useLanguage, outputLanguages, OutputLocale } from '../contexts/LanguageContext';
-import { translateText } from '../services/geminiService';
+import { useLanguage, OutputLocale, outputLanguages } from '../contexts/LanguageContext';
+import { translateText } from '../services/llmService';
+import { speakInSectionsWithAPI, cancelSpeech, isLanguageSupported, type SupportedTTSLanguage } from '../services/ttsService';
 
 interface MedicationResultProps {
   result: MedicationResultData;
 }
 
-const Section: React.FC<{ title: string; icon: JSX.Element; children: React.ReactNode; isWarning?: boolean }> = ({ title, icon, children, isWarning = false }) => (
-    <div className={`py-4 ${isWarning ? 'bg-red-900/20 p-4 rounded-lg' : ''}`}>
-        <h3 className={`flex items-center text-md font-semibold mb-2 ${isWarning ? 'text-red-400' : 'text-slate-300'}`}>
-            {icon}
+const Section: React.FC<{ title: string; icon: React.ReactElement; children: React.ReactNode; isWarning?: boolean }> = ({ title, icon, children, isWarning = false }) => (
+    <div className={`py-4 ${isWarning ? 'bg-red-900/15 p-4 rounded-xl border border-red-800/30' : ''}`}>
+        <h3 className={`flex items-center text-base font-semibold mb-3 ${isWarning ? 'text-red-400' : 'text-slate-200'}`}>
+            <span className={isWarning ? 'text-red-400' : 'text-cyan-400'}>{icon}</span>
             <span className="ml-2.5">{title}</span>
         </h3>
-        <div className="text-slate-400 prose prose-sm max-w-none prose-p:my-1 prose-li:my-1 prose-ul:space-y-1">
+        <div className="text-slate-300 prose prose-sm max-w-none prose-p:my-2 prose-li:my-1.5 prose-ul:space-y-1.5 leading-relaxed">
             {children}
         </div>
     </div>
@@ -30,7 +31,7 @@ const MedicationResult: React.FC<MedicationResultProps> = ({ result }) => {
   const utteranceQueue = useRef<SpeechSynthesisUtterance[]>([]);
   
   useEffect(() => {
-    return () => { speechSynthesis.cancel(); };
+    return () => { cancelSpeech(); };
   }, []);
 
   useEffect(() => {
@@ -38,39 +39,63 @@ const MedicationResult: React.FC<MedicationResultProps> = ({ result }) => {
     setCurrentDisplayLocale(uiLocale);
   }, [result, uiLocale]);
 
-  const speakInSections = (sections: {title: string, content: string | string[]}[], lang: OutputLocale | 'en' | 'es' | 'fr') => {
+  const speakInSections = async (sections: {title: string, content: string | string[]}[], lang: OutputLocale | 'en' | 'es' | 'fr') => {
     if (isSpeaking) {
-      speechSynthesis.cancel();
+      cancelSpeech();
       setIsSpeaking(false);
       return;
     }
+
+    setIsSpeaking(true);
+
+    const langCodeMap: { [key: string]: SupportedTTSLanguage } = {
+      'kn': 'kn-IN', 'hi': 'hi-IN', 'ta': 'ta-IN', 'te': 'te-IN', 'ml': 'ml-IN',
+      'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR'
+    };
+
+    const ttsLangCode = langCodeMap[lang] || 'en-US';
+    
+    // Format sections properly for TTS
+    const formattedSections = sections.map(section => ({
+      title: section.title,
+      content: Array.isArray(section.content) ? section.content.join(', ') : section.content
+    }));
+
+    try {
+      if (isLanguageSupported(ttsLangCode)) {
+        await speakInSectionsWithAPI(formattedSections, ttsLangCode, () => {
+          setIsSpeaking(false);
+        });
+      } else {
+        fallbackToBrowserTTS(formattedSections, ttsLangCode);
+      }
+    } catch (error) {
+      console.error('[TTS] Error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const fallbackToBrowserTTS = (sections: {title: string, content: string}[], langCode: string) => {
     const allVoices = speechSynthesis.getVoices();
     if (allVoices.length === 0) {
-      setTimeout(() => speakInSections(sections, lang), 100);
+      setTimeout(() => fallbackToBrowserTTS(sections, langCode), 100);
       return;
     }
-    const langCode = lang in outputLanguages ? outputLanguages[lang as OutputLocale]?.voiceCode : { en: 'en-US', es: 'es-ES', fr: 'fr-FR' }[lang];
     
-    // --- 1. Prioritize Higher-Quality Voices ---
     const voicesForLang = allVoices.filter(v => v.lang.startsWith(langCode.split('-')[0]));
     const nativeVoice = voicesForLang.find(v => v.lang === langCode);
-    const qualityKeywords = ['Google', 'Microsoft', 'Apple', 'Neural', 'Online', 'Premium'];
+    const qualityKeywords = ['Google', 'Microsoft', 'Apple', 'Neural'];
     const highQualityVoice = voicesForLang.find(v => qualityKeywords.some(keyword => v.name.includes(keyword))) || nativeVoice;
     const bestVoice = highQualityVoice || voicesForLang[0];
 
-    // --- 2. Implement Section-Based Speaking with Introductions ---
     utteranceQueue.current = sections.map(section => {
-      const contentString = Array.isArray(section.content) ? section.content.join(', ') : section.content;
-      const textToSpeak = `${section.title}: ${contentString}`;
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      const utterance = new SpeechSynthesisUtterance(`${section.title}: ${section.content}`);
       utterance.lang = langCode;
       if (bestVoice) utterance.voice = bestVoice;
-      // --- 4. Adjust Speech Rate for Clarity ---
       utterance.rate = 0.9;
       return utterance;
     });
 
-    // --- 3. Ensure Natural Pauses Between Sections ---
     const speakNext = () => {
       if (utteranceQueue.current.length > 0) {
         const utterance = utteranceQueue.current.shift()!;
@@ -81,7 +106,6 @@ const MedicationResult: React.FC<MedicationResultProps> = ({ result }) => {
       }
     };
     
-    setIsSpeaking(true);
     speakNext();
   };
 
@@ -122,9 +146,9 @@ const MedicationResult: React.FC<MedicationResultProps> = ({ result }) => {
   };
 
   return (
-    <div className={`p-4 rounded-xl border border-sky-500/80 bg-slate-900/50 backdrop-blur-md shadow-lg shadow-sky-500/20 divide-y divide-slate-700/50`}>
-      <div className="flex items-center justify-between pb-3">
-        <span className="text-lg font-bold text-sky-300">{current.medicationName}</span>
+    <div className={`p-5 rounded-2xl border border-cyan-500/60 bg-gradient-to-br from-slate-900/60 to-slate-800/40 backdrop-blur-lg shadow-xl shadow-cyan-500/15 divide-y divide-slate-700/30`}>
+      <div className="flex items-center justify-between pb-4">
+        <span className="text-lg font-bold text-cyan-300">{current.medicationName}</span>
         <button
           onClick={() => speakInSections([
               { title: t('medicationName'), content: current.medicationName },
@@ -135,7 +159,7 @@ const MedicationResult: React.FC<MedicationResultProps> = ({ result }) => {
               { title: t('medicationWarnings'), content: current.crucialWarnings },
             ], currentDisplayLocale)
           }
-          className={`p-2 rounded-full hover:bg-sky-500/20 focus:outline-none focus:ring-2 focus:ring-sky-500 ${isSpeaking ? 'text-sky-400' : 'text-slate-400'}`}
+          className={`p-2.5 rounded-xl hover:bg-cyan-500/15 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${isSpeaking ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400'}`}
           aria-label={t('speakLabel')}
         >
           {isSpeaking ? (
@@ -146,15 +170,15 @@ const MedicationResult: React.FC<MedicationResultProps> = ({ result }) => {
         </button>
       </div>
       
-      <div className="py-3">
-          <p className="text-xs text-slate-400 mb-2">{t('translateToLabel')}</p>
+      <div className="py-4">
+          <p className="text-xs text-slate-400 mb-3 font-medium">{t('translateToLabel')}</p>
           <div className="flex flex-wrap gap-2">
-             <button onClick={() => { setTranslatedContent(null); setCurrentDisplayLocale(uiLocale);}} className={`px-2.5 py-1 text-xs rounded-full transition-colors ${!translatedContent ? 'bg-sky-600 text-white' : 'text-slate-300 bg-slate-700/50 hover:bg-slate-600/60'}`}>{t('originalLabel')}</button>
+             <button onClick={() => { setTranslatedContent(null); setCurrentDisplayLocale(uiLocale);}} className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${!translatedContent ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-300 bg-slate-700/50 hover:bg-slate-600/60'}`}>{t('originalLabel')}</button>
             {(Object.keys(outputLanguages) as OutputLocale[]).map(locale => (
-                <button key={locale} onClick={() => handleTranslate(locale)} className={`px-2.5 py-1 text-xs rounded-full transition-colors ${currentDisplayLocale === locale ? 'bg-sky-600 text-white' : 'text-cyan-300 bg-cyan-900/40 hover:bg-cyan-800/60'}`}>{outputLanguages[locale].name}</button>
+                <button key={locale} onClick={() => handleTranslate(locale)} className={`px-3 py-1.5 text-xs rounded-lg transition-all duration-200 ${currentDisplayLocale === locale ? 'bg-cyan-600 text-white shadow-md' : 'text-cyan-300 bg-cyan-900/30 hover:bg-cyan-800/50 border border-cyan-800/30'}`}>{outputLanguages[locale].name}</button>
             ))}
           </div>
-          {isTranslating && <p className="text-xs text-slate-400 mt-2 animate-pulse">{t('translatingLabel')}...</p>}
+          {isTranslating && <p className="text-xs text-cyan-400 mt-3 animate-pulse flex items-center gap-2"><span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping"></span>{t('translatingLabel')}...</p>}
       </div>
 
       <Section title={t('medicationUses')} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>}>
