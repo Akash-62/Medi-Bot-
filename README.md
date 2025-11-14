@@ -1,13 +1,20 @@
 
 # 🩺 MediBot – AI Health Assistant
-AI-driven, multilingual medical triage & health guidance platform.
+AI-driven, multilingual medical triage & health guidance platform with **specialized cancer analysis**.
 
 **Deploy:** Vite + React + TypeScript
 
 ---
 
 ## 🚀 Overview
-MediBot is an intelligent health assistant that provides instant medical triage, medication information, and preventive health guidance. Powered by advanced AI trained on clinical guidelines, it offers multilingual support with native voice capabilities for accessibility.
+MediBot is an intelligent health assistant that provides instant medical triage, medication information, and preventive health guidance. **Built with specialized oncology knowledge**, it excels at cancer symptom analysis, risk assessment, and differential diagnosis. Powered by advanced AI trained on clinical guidelines (including NCCN, WHO, and medical literature), it offers multilingual support with native voice capabilities for accessibility.
+
+### 🎯 Cancer Specialization
+- **Oncology-trained AI** with comprehensive cancer knowledge base
+- **Differential diagnosis** for cancer vs. non-cancer symptoms
+- **Treatment insights** based on NCCN guidelines and clinical standards
+- **Risk stratification** with cited medical sources
+- **Precautions database** including cancer prevention strategies
 
 ---
 
@@ -15,13 +22,14 @@ MediBot is an intelligent health assistant that provides instant medical triage,
 
 | Area | Description |
 |------|-------------|
-| **🧠 AI Triage** | Symptom analysis → urgency level + recommendation + clinical reasoning |
+| **🧠 AI Triage** | Symptom analysis → urgency level + recommendation + clinical reasoning + **cancer differential diagnosis** |
+| **🎗️ Cancer Analysis** | Specialized oncology assessment with possible cancer types, non-cancer causes, and treatment insights |
 | **💊 Pharmacy Mode** | Pill identification + usage + dosage + side effects + warnings |
-| **🛡️ Precautions (RAG)** | Evidence-based preventive health guidance from curated medical knowledge |
+| **🛡️ Precautions (RAG)** | Evidence-based preventive health guidance from curated medical knowledge including cancer prevention |
 | **🗣️ Voice Input** | Real-time voice dictation via Web Speech API |
 | **🖼️ Document Upload** | Analyze prescriptions, lab reports, pill photos (PDF, DOC, images) |
 | **🌐 Multilingual** | English, Spanish, French + Hindi, Tamil, Telugu, Malayalam, Kannada |
-| **🔊 Native TTS** | ResponsiveVoice API for Indian & European language text-to-speech |
+| **🔊 Native TTS** | Gemini-powered translation + ResponsiveVoice API for natural Indian language speech |
 | **📱 Responsive** | Mobile-first glassmorphism UI with accessibility features |
 | **⚡ Fast Analysis** | Optimized AI inference for quick medical insights |
 
@@ -31,9 +39,12 @@ MediBot is an intelligent health assistant that provides instant medical triage,
 - **React 19** + **TypeScript**
 - **Vite** build tool
 - **Tailwind CSS** + custom glassmorphism styles
-- **AI-powered** medical analysis with oncology specialization
-- **ResponsiveVoice API** for multilingual TTS
-- **RAG architecture** for grounded medical knowledge
+- **AI-powered** medical analysis with **specialized oncology training**
+- **Cancer Knowledge Base** - Curated oncology database with NCCN guidelines
+- **Gemini API** - For accurate medical translation + native TTS
+- **Groq API (Llama-3.3-70b)** - Fast, accurate medical AI inference
+- **ResponsiveVoice API** - Multilingual text-to-speech
+- **RAG architecture** - Retrieval-augmented generation for grounded medical knowledge
 - **Deployed on Vercel**
 
 ---
@@ -110,16 +121,31 @@ npm run dev
 
 ## 🧪 Structured Outputs
 
-### Triage Analysis
+### Triage Analysis (Cancer-Specialized)
 ```json
 {
   "urgencyLevel": "Priority",
-  "recommendation": "See a doctor within 24-48 hours",
-  "explanation": "Clinical reasoning with differential diagnosis...",
-  "possibleCancerTypes": ["Type 1 - reasoning", "Type 2 - reasoning"],
-  "likelyNonCancerCauses": ["Benign condition 1", "Benign condition 2"],
-  "treatmentInsights": ["Treatment approach 1", "Management strategy 2"],
-  "citedSources": ["NCCN Guidelines", "Mayo Clinic", "PubMed"]
+  "recommendation": "See an oncologist within 24-48 hours for evaluation",
+  "explanation": "Persistent cough with weight loss warrants immediate oncology evaluation. While these symptoms can be benign, the combination requires professional assessment to rule out lung cancer or other serious conditions.",
+  "possibleCancerTypes": [
+    "Lung Cancer - Persistent cough, weight loss, and breathing difficulties are key warning signs",
+    "Esophageal Cancer - Difficulty swallowing combined with weight loss requires evaluation"
+  ],
+  "likelyNonCancerCauses": [
+    "Chronic Bronchitis - Inflammation causing persistent cough",
+    "GERD - Acid reflux causing cough and chest discomfort",
+    "Tuberculosis - Infectious disease with similar respiratory symptoms"
+  ],
+  "treatmentInsights": [
+    "Immediate chest X-ray or CT scan recommended",
+    "Pulmonology consultation for bronchoscopy if needed",
+    "Blood work including tumor markers (CEA, CA 19-9)"
+  ],
+  "citedSources": [
+    "NCCN Guidelines for Lung Cancer Screening",
+    "Mayo Clinic - Warning Signs of Cancer",
+    "American Cancer Society - Early Detection"
+  ]
 }
 ```
 
@@ -138,15 +164,33 @@ npm run dev
 }
 ```
 
-### Prevention Guidance
+### Prevention Guidance (Includes Cancer Prevention)
 ```json
 {
-  "diseaseName": "Hypertension",
-  "overview": "Chronic condition requiring lifestyle management",
-  "hygienePractices": ["Regular BP monitoring", "Stress reduction"],
-  "dietaryRecommendations": ["DASH diet", "Low sodium", "High potassium"],
-  "lifestyleAdjustments": ["Regular exercise", "Weight management"],
-  "medicalCheckups": ["Annual cardiovascular assessment"]
+  "diseaseName": "Colorectal Cancer Prevention",
+  "overview": "Evidence-based strategies to reduce colorectal cancer risk through lifestyle modifications and early screening",
+  "hygienePractices": [
+    "Regular colorectal cancer screening (colonoscopy every 10 years after age 45)",
+    "Monitor for warning signs (blood in stool, persistent abdominal pain)"
+  ],
+  "dietaryRecommendations": [
+    "High-fiber diet rich in fruits, vegetables, and whole grains",
+    "Limit red and processed meats",
+    "Increase calcium and vitamin D intake",
+    "Reduce alcohol consumption"
+  ],
+  "lifestyleAdjustments": [
+    "Maintain healthy weight (BMI 18.5-24.9)",
+    "Regular physical activity (150 minutes moderate exercise weekly)",
+    "Avoid tobacco use",
+    "Limit sedentary behavior"
+  ],
+  "medicalCheckups": [
+    "Annual physical examination",
+    "Fecal occult blood test (FOBT) annually",
+    "Colonoscopy every 10 years (or as recommended)",
+    "Genetic counseling if family history present"
+  ]
 }
 ```
 
