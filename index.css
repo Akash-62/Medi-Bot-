@@ -128,7 +128,9 @@
 	font-weight: 400;
 	letter-spacing: 0.01em;
 	transition: color 0.25s ease; 
-	max-height: 150px; 
+	height: 38px; /* Fixed height to prevent expansion */
+	max-height: 38px; 
+	overflow-y: auto; /* Allow scrolling if text is long */
 	padding: 8px 0 4px 0;
 	min-width: 0; /* Allow shrinking below content size */
 }

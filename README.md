@@ -48,11 +48,17 @@ MediBot is an intelligent health assistant that provides instant medical triage,
 Create a `.env` file in the root directory:
 
 ```bash
-# Required: AI API Key (contact maintainer)
-VITE_GROQ_API_KEY=your_api_key_here
+# Required: Groq API Key (Main AI - Free, Fast)
+VITE_GROQ_API_KEY=your_groq_api_key_here
+
+# Optional: Gemini API Key (Google AI - For Native TTS Translation)
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-> **Note:** API keys are required for AI functionality. Contact the maintainer for setup instructions.
+> **Note:** 
+> - **Groq API Key** is required for AI functionality. Get it free at [console.groq.com](https://console.groq.com/keys)
+> - **Gemini API Key** is optional, used for enhanced TTS translation. Get it at [makersuite.google.com](https://makersuite.google.com/app/apikey)
+> - Without Gemini, the app uses ResponsiveVoice for Indian language TTS
 
 ---
 

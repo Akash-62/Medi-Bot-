@@ -51,13 +51,8 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
     mode === 'precautions' ? "Get health prevention tips..." :
     "Ask MediBot anything...";
 
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  }, [text]);
+  // Removed auto-resize effect to prevent layout shifts
+  // Textarea now has fixed height with scroll
 
   useEffect(() => {
     if (prevIsRecording.current && !isRecording) {
@@ -136,7 +131,6 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
       onSendMessage(text, file || undefined);
       setText('');
       handleRemoveFile();
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
     }
   };
 

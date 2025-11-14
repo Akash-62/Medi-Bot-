@@ -1,11 +1,14 @@
 /**
  * Text-to-Speech Service for Indian Languages
  * 
- * Using ResponsiveVoice API (free tier: 5000 requests/day)
- * Supports: Hindi, Tamil, Telugu, Malayalam, Kannada, Bengali, Gujarati, etc.
+ * Primary: ResponsiveVoice API (free tier: 5000 requests/day)
+ * Fallback: Gemini + Browser TTS (with translation for better accuracy)
  * 
- * Alternative: Google Cloud TTS (paid but better quality)
+ * Supports: Hindi, Tamil, Telugu, Malayalam, Kannada, Bengali, etc.
  */
+
+import { translateAndSpeak, cancelGeminiSpeech, isGeminiTTSAvailable } from './geminiTTSService';
+import type { GeminiTTSLanguage } from './geminiTTSService';
 
 export type SupportedTTSLanguage = 'en-US' | 'hi-IN' | 'ta-IN' | 'te-IN' | 'ml-IN' | 'kn-IN' | 'es-ES' | 'fr-FR';
 
@@ -34,6 +37,7 @@ const initResponsiveVoice = (): boolean => {
 
 /**
  * Speak text using ResponsiveVoice API (supports Indian languages)
+ * Falls back to Gemini + Browser TTS if ResponsiveVoice fails
  */
 export const speakWithResponsiveVoice = (
   text: string, 
@@ -42,7 +46,16 @@ export const speakWithResponsiveVoice = (
   onError?: (error: string) => void
 ): void => {
   if (!initResponsiveVoice()) {
-    console.warn('[TTS] ResponsiveVoice not loaded, falling back to browser TTS');
+    console.warn('[TTS] ResponsiveVoice not loaded, trying Gemini TTS...');
+    
+    // Try Gemini TTS as fallback
+    if (isGeminiTTSAvailable()) {
+      translateAndSpeak(text, langCode as GeminiTTSLanguage, onEnd, onError);
+      return;
+    }
+    
+    // Final fallback to browser TTS
+    console.warn('[TTS] Gemini not available, using browser TTS');
     fallbackToBrowserTTS(text, langCode, onEnd);
     return;
   }
@@ -63,8 +76,15 @@ export const speakWithResponsiveVoice = (
     onerror: (error: any) => {
       console.error('[TTS] ResponsiveVoice error:', error);
       onError?.(error);
-      // Fallback to browser TTS on error
-      fallbackToBrowserTTS(text, langCode, onEnd);
+      
+      // Try Gemini as fallback on error
+      if (isGeminiTTSAvailable()) {
+        console.log('[TTS] Switching to Gemini TTS...');
+        translateAndSpeak(text, langCode as GeminiTTSLanguage, onEnd, onError);
+      } else {
+        // Final fallback to browser TTS
+        fallbackToBrowserTTS(text, langCode, onEnd);
+      }
     }
   });
 };
@@ -77,6 +97,9 @@ export const cancelSpeech = (): void => {
   if (typeof (window as any).responsiveVoice !== 'undefined') {
     (window as any).responsiveVoice.cancel();
   }
+  
+  // Cancel Gemini TTS
+  cancelGeminiSpeech();
   
   // Cancel browser TTS
   if (typeof speechSynthesis !== 'undefined') {
