@@ -27,24 +27,24 @@ export interface TriageResultData {
 }
 
 export interface MedicationResultData {
-    medicationName: string;
-    commonUses: string[];
-    mechanismOfAction: string;
-    dosageInformation: {
-        adult: string;
-        pediatric: string;
-    };
-    commonSideEffects: string[];
-    crucialWarnings: string[];
+  medicationName: string;
+  commonUses: string[];
+  mechanismOfAction: string;
+  dosageInformation: {
+    adult: string;
+    pediatric: string;
+  };
+  commonSideEffects: string[];
+  crucialWarnings: string[];
 }
 
 export interface PrecautionResultData {
-    diseaseName: string;
-    overview: string;
-    hygienePractices: string[];
-    dietaryRecommendations: string[];
-    lifestyleAdjustments: string[];
-    medicalCheckups: string[];
+  diseaseName: string;
+  overview: string;
+  hygienePractices: string[];
+  dietaryRecommendations: string[];
+  lifestyleAdjustments: string[];
+  medicalCheckups: string[];
 }
 
 
@@ -56,7 +56,7 @@ export interface ChatMessage {
   id: string;
   sender: 'user' | 'ai';
   text?: string;
-  imagePreview?: string;
+  // imagePreview removed
   triageResult?: TriageResultData;
   medicationResult?: MedicationResultData;
   precautionResult?: PrecautionResultData;

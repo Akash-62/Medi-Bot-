@@ -21,7 +21,7 @@ const RESPONSIVE_VOICE_MAP: ResponsiveVoiceMapping = {
   'en-US': 'US English Female',
   'hi-IN': 'Hindi Female',
   'ta-IN': 'Tamil Female',
-  'te-IN': 'Telugu Female', 
+  'te-IN': 'Telugu Female',
   'ml-IN': 'Malayalam Female',
   'kn-IN': 'Hindi Female', // Fallback: ResponsiveVoice doesn't have Kannada, use Hindi
   'es-ES': 'Spanish Female',
@@ -36,57 +36,55 @@ const initResponsiveVoice = (): boolean => {
 };
 
 /**
- * Speak text using ResponsiveVoice API (supports Indian languages)
- * Falls back to Gemini + Browser TTS if ResponsiveVoice fails
+ * Speak text using Gemini Translation + Best Available TTS
+ * Priority: Gemini AI translation → High-quality browser voices → ResponsiveVoice fallback
  */
 export const speakWithResponsiveVoice = (
-  text: string, 
+  text: string,
   langCode: SupportedTTSLanguage,
   onEnd?: () => void,
   onError?: (error: string) => void
 ): void => {
-  if (!initResponsiveVoice()) {
-    console.warn('[TTS] ResponsiveVoice not loaded, trying Gemini TTS...');
-    
-    // Try Gemini TTS as fallback
-    if (isGeminiTTSAvailable()) {
-      translateAndSpeak(text, langCode as GeminiTTSLanguage, onEnd, onError);
-      return;
-    }
-    
-    // Final fallback to browser TTS
-    console.warn('[TTS] Gemini not available, using browser TTS');
-    fallbackToBrowserTTS(text, langCode, onEnd);
+  console.log('[TTS] Starting speech:', { text: text.substring(0, 50), lang: langCode });
+
+  // For Indian languages, prioritize Gemini translation for accuracy
+  const indianLanguages: SupportedTTSLanguage[] = ['hi-IN', 'ta-IN', 'te-IN', 'ml-IN', 'kn-IN'];
+  const isIndianLang = indianLanguages.includes(langCode);
+
+  if (isIndianLang && langCode !== 'en-US' && isGeminiTTSAvailable()) {
+    console.log('[TTS] Using Gemini AI for native translation...');
+    translateAndSpeak(text, langCode as GeminiTTSLanguage, onEnd, onError);
     return;
   }
 
-  const rv = (window as any).responsiveVoice;
-  const voiceName = RESPONSIVE_VOICE_MAP[langCode] || 'US English Female';
+  // Try ResponsiveVoice if available
+  if (initResponsiveVoice()) {
+    const rv = (window as any).responsiveVoice;
+    const voiceName = RESPONSIVE_VOICE_MAP[langCode] || 'US English Female';
 
-  console.log('[TTS] Speaking with ResponsiveVoice:', { text: text.substring(0, 50), voice: voiceName });
+    console.log('[TTS] Using ResponsiveVoice:', voiceName);
 
-  rv.speak(text, voiceName, {
-    pitch: 1,
-    rate: 0.9,
-    volume: 1,
-    onend: () => {
-      console.log('[TTS] Speech ended');
-      onEnd?.();
-    },
-    onerror: (error: any) => {
-      console.error('[TTS] ResponsiveVoice error:', error);
-      onError?.(error);
-      
-      // Try Gemini as fallback on error
-      if (isGeminiTTSAvailable()) {
-        console.log('[TTS] Switching to Gemini TTS...');
-        translateAndSpeak(text, langCode as GeminiTTSLanguage, onEnd, onError);
-      } else {
-        // Final fallback to browser TTS
+    rv.speak(text, voiceName, {
+      pitch: 1,
+      rate: 0.9,
+      volume: 1,
+      onend: () => {
+        console.log('[TTS] Speech completed');
+        onEnd?.();
+      },
+      onerror: (error: any) => {
+        console.error('[TTS] ResponsiveVoice error:', error);
+
+        // Fallback to browser TTS on error
         fallbackToBrowserTTS(text, langCode, onEnd);
       }
-    }
-  });
+    });
+    return;
+  }
+
+  // Final fallback: Browser native TTS
+  console.warn('[TTS] Using browser TTS fallback');
+  fallbackToBrowserTTS(text, langCode, onEnd);
 };
 
 /**
@@ -97,10 +95,10 @@ export const cancelSpeech = (): void => {
   if (typeof (window as any).responsiveVoice !== 'undefined') {
     (window as any).responsiveVoice.cancel();
   }
-  
+
   // Cancel Gemini TTS
   cancelGeminiSpeech();
-  
+
   // Cancel browser TTS
   if (typeof speechSynthesis !== 'undefined') {
     speechSynthesis.cancel();
@@ -123,26 +121,26 @@ const fallbackToBrowserTTS = (
   onEnd?: () => void
 ): void => {
   console.log('[TTS] Using browser fallback TTS');
-  
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = langCode;
   utterance.rate = 0.9;
   utterance.pitch = 1;
   utterance.volume = 1;
-  
+
   if (onEnd) {
     utterance.onend = () => onEnd();
   }
-  
+
   // Try to find best voice
   const voices = speechSynthesis.getVoices();
-  const voice = voices.find(v => v.lang === langCode) || 
-                voices.find(v => v.lang.startsWith(langCode.split('-')[0]));
-  
+  const voice = voices.find(v => v.lang === langCode) ||
+    voices.find(v => v.lang.startsWith(langCode.split('-')[0]));
+
   if (voice) {
     utterance.voice = voice;
   }
-  
+
   speechSynthesis.speak(utterance);
 };
 
@@ -165,9 +163,9 @@ export const speakInSectionsWithAPI = async (
 
     const section = sections[currentIndex];
     const textToSpeak = `${section.title}: ${section.content}`;
-    
+
     currentIndex++;
-    
+
     speakWithResponsiveVoice(
       textToSpeak,
       langCode,

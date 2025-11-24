@@ -6,7 +6,7 @@ import { getTriageRecommendation, getMedicationInfo, getPrecautionsInfo, getChat
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ChatInterfaceProps {
-    mode: AppMode;
+  mode: AppMode;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
@@ -48,15 +48,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
 
   const isGreeting = (text: string): boolean => {
     const lowerText = text.trim().toLowerCase();
-    
+
     // Exact matches for very short messages
-    const exactGreetings = ['hi', 'hello', 'hey', 'yo', 'hii', 'hiii', 'heya', 'sup', 'wassup', 
-                           'good morning', 'good afternoon', 'good evening', 'morning', 'evening',
-                           'hola', 'bonjour', 'salut', 'namaste', 'ola'];
+    const exactGreetings = ['hi', 'hello', 'hey', 'yo', 'hii', 'hiii', 'heya', 'sup', 'wassup',
+      'good morning', 'good afternoon', 'good evening', 'morning', 'evening',
+      'hola', 'bonjour', 'salut', 'namaste', 'ola'];
     const cleaned = lowerText.replace(/[.!?,;]/g, '').trim();
-    
+
     if (exactGreetings.includes(cleaned)) return true;
-    
+
     // Partial matches for longer conversational messages
     const greetingPatterns = [
       /^hi\s/i, /^hello\s/i, /^hey\s/i, /^yo\s/i,
@@ -68,26 +68,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
       /greetings/i,
       /^hii+\s/i, // hiii there, hiiii
     ];
-    
+
     return greetingPatterns.some(pattern => pattern.test(lowerText));
   };
 
   const isFarewell = (text: string): boolean => {
     const lower = text.trim().toLowerCase().replace(/[.!?]/g, '');
-    const farewells = ['bye', 'goodbye', 'see you', 'see ya', 'cya', 'bye bye', 'take care', 
-                       'good night', 'goodnight', 'night', 'ttyl', 'later', 'peace', 'adios'];
+    const farewells = ['bye', 'goodbye', 'see you', 'see ya', 'cya', 'bye bye', 'take care',
+      'good night', 'goodnight', 'night', 'ttyl', 'later', 'peace', 'adios'];
     if (farewells.includes(lower)) return true;
-    
+
     const farewellPatterns = [/bye+/i, /see\s+you/i, /good\s*night/i, /take\s+care/i];
     return farewellPatterns.some(pattern => pattern.test(lower));
   };
 
   const isThanks = (text: string): boolean => {
     const lower = text.trim().toLowerCase().replace(/[.!?]/g, '');
-    const thanks = ['thanks', 'thank you', 'thankyou', 'thx', 'thank u', 'ty', 'tq', 
-                   'thanks a lot', 'thank you so much', 'appreciate it', 'much appreciated'];
+    const thanks = ['thanks', 'thank you', 'thankyou', 'thx', 'thank u', 'ty', 'tq',
+      'thanks a lot', 'thank you so much', 'appreciate it', 'much appreciated'];
     if (thanks.includes(lower)) return true;
-    
+
     const thanksPatterns = [/thank/i, /appreciate/i, /grateful/i];
     return thanksPatterns.some(pattern => pattern.test(lower));
   };
@@ -103,39 +103,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
       /^are\s+you\s+(a\s+)?((real\s+)?doctor|bot|ai|robot)/i,
       /^what('?s|\s+is)\s+your\s+name/i,
     ];
-    
+
     return casualPatterns.some(pattern => pattern.test(lower));
   };
 
-  const handleSendMessage = async (text: string, file?: File) => {
-    if (!text.trim() && !file) return;
+  const handleSendMessage = async (text: string) => { // Removed file parameter
+    if (!text.trim()) return;
 
     setIsLoading(true);
 
-    let imagePreview: string | undefined = undefined;
-    let imagePayload: { mimeType: string; data: string } | undefined = undefined;
-
-    if (file) {
-      imagePreview = URL.createObjectURL(file);
-      const reader = new FileReader();
-      const promise = new Promise<{ mimeType: string; data: string }>((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64String = (reader.result as string).split(',')[1];
-          resolve({ mimeType: file.type, data: base64String });
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      imagePayload = await promise;
-    }
+    // Removed all file/image handling code
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       sender: 'user',
       text: text,
-      imagePreview: imagePreview,
+      // Removed imagePreview
     };
-    
+
     const updatedMessages = messages.map(m => ({ ...m, suggestions: undefined }));
     setMessages([...updatedMessages, userMessage]);
 
@@ -144,59 +129,59 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
     setMessages(prev => [...prev, { id: typingIndicatorId, sender: 'ai', isTyping: true }]);
 
     // Handle casual conversations (greetings, farewells, thanks, general questions)
-    if (!file && (isGreeting(text) || isFarewell(text) || isThanks(text) || isCasualQuestion(text))) {
-        // Use Groq AI for natural conversational responses
-        try {
-          const aiReply = await getChatResponse(text, locale);
-          
-          const aiMessage: ChatMessage = {
-            id: `${Date.now()}-ai`,
-            sender: 'ai',
-            text: aiReply,
-          };
-          setMessages(prev => prev.filter(m => m.id !== typingIndicatorId));
-          setMessages(prev => [...prev, aiMessage]);
-        } catch (error) {
-          console.error('Chat response error:', error);
-          // Fallback to simple responses
-          const greetingResponses = [
-            'Hi there! 👋 How can I help you with your health today?',
-            'Hello! 😊 Ready to assist—what would you like to know?',
-            'Hey! 🙌 Ask me anything about symptoms, medicines, or precautions.',
-            'Hi! 🩺 What would you like to explore today?'
-          ];
-          const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-          
-          const aiMessage: ChatMessage = {
-            id: `${Date.now()}-ai`,
-            sender: 'ai',
-            text: pick(greetingResponses),
-          };
-          setMessages(prev => prev.filter(m => m.id !== typingIndicatorId));
-          setMessages(prev => [...prev, aiMessage]);
-        }
-    } else {
-        let aiMessage: ChatMessage;
+    if (isGreeting(text) || isFarewell(text) || isThanks(text) || isCasualQuestion(text)) { // Removed file check
+      // Use Groq AI for natural conversational responses
+      try {
+        const aiReply = await getChatResponse(text, locale);
 
-        switch (mode) {
-            case 'triage':
-                const triageResult = await getTriageRecommendation(text, locale, imagePayload);
-                aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', triageResult };
-                break;
-            case 'pharmacy':
-                const medicationResult = await getMedicationInfo(text, locale, imagePayload);
-                aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', medicationResult };
-                break;
-            case 'precautions':
-                const precautionResult = await getPrecautionsInfo(text, locale);
-                aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', precautionResult };
-                break;
-            default:
-                 aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', text: "Error: Invalid mode selected." };
-        }
-        
+        const aiMessage: ChatMessage = {
+          id: `${Date.now()}-ai`,
+          sender: 'ai',
+          text: aiReply,
+        };
         setMessages(prev => prev.filter(m => m.id !== typingIndicatorId));
         setMessages(prev => [...prev, aiMessage]);
+      } catch (error) {
+        console.error('Chat response error:', error);
+        // Fallback to simple responses
+        const greetingResponses = [
+          'Hi there! 👋 How can I help you with your health today?',
+          'Hello! 😊 Ready to assist—what would you like to know?',
+          'Hey! 🙌 Ask me anything about symptoms, medicines, or precautions.',
+          'Hi! 🩺 What would you like to explore today?'
+        ];
+        const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
+        const aiMessage: ChatMessage = {
+          id: `${Date.now()}-ai`,
+          sender: 'ai',
+          text: pick(greetingResponses),
+        };
+        setMessages(prev => prev.filter(m => m.id !== typingIndicatorId));
+        setMessages(prev => [...prev, aiMessage]);
+      }
+    } else {
+      let aiMessage: ChatMessage;
+
+      switch (mode) {
+        case 'triage':
+          const triageResult = await getTriageRecommendation(text, locale); // Removed imagePayload
+          aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', triageResult };
+          break;
+        case 'pharmacy':
+          const medicationResult = await getMedicationInfo(text, locale); // Removed imagePayload
+          aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', medicationResult };
+          break;
+        case 'precautions':
+          const precautionResult = await getPrecautionsInfo(text, locale);
+          aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', precautionResult };
+          break;
+        default:
+          aiMessage = { id: `${Date.now()}-ai`, sender: 'ai', text: "Error: Invalid mode selected." };
+      }
+
+      setMessages(prev => prev.filter(m => m.id !== typingIndicatorId));
+      setMessages(prev => [...prev, aiMessage]);
     }
 
     setIsLoading(false);
@@ -205,17 +190,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
   const handleSuggestionClick = (text: string) => {
     handleSendMessage(text);
   };
-  
+
   const canClear = messages.some(m => !m.id.startsWith('initial'));
 
   return (
     <div className="futuristic-chat-container flex flex-col h-full max-w-7xl mx-auto">
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-5 md:space-y-6 smooth-scroll hide-scrollbar">
         {messages.map((msg) => (
-          <ChatMessageBubble 
-            key={msg.id} 
+          <ChatMessageBubble
+            key={msg.id}
             message={msg}
-            onSuggestionClick={handleSuggestionClick} 
+            onSuggestionClick={handleSuggestionClick}
           />
         ))}
         <div ref={messagesEndRef} />
@@ -235,8 +220,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
             </button>
           </div>
         )}
-        <SymptomInput 
-          onSendMessage={handleSendMessage} 
+        <SymptomInput
+          onSendMessage={handleSendMessage}
           isLoading={isLoading}
           mode={mode}
         />

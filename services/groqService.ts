@@ -17,11 +17,11 @@ import { Locale, supportedLanguages } from '../contexts/LanguageContext';
 // Initialize Groq client
 const getGroqClient = () => {
   const apiKey = (import.meta as any).env?.VITE_GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
-  
+
   if (!apiKey) {
     throw new Error('GROQ_API_KEY not found. Please add VITE_GROQ_API_KEY to your .env file');
   }
-  
+
   return new Groq({ apiKey, dangerouslyAllowBrowser: true });
 };
 
@@ -32,11 +32,11 @@ const MEDICAL_MODEL = 'llama-3.3-70b-versatile';
  */
 const parseJsonResponse = <T>(response: string): T => {
   let cleaned = response.trim();
-  
+
   if (cleaned.startsWith('```json')) cleaned = cleaned.substring(7);
   if (cleaned.startsWith('```')) cleaned = cleaned.substring(3);
   if (cleaned.endsWith('```')) cleaned = cleaned.substring(0, cleaned.length - 3);
-  
+
   try {
     return JSON.parse(cleaned.trim());
   } catch (error) {
@@ -46,63 +46,77 @@ const parseJsonResponse = <T>(response: string): T => {
 };
 
 /**
- * TRIAGE MODE - OPTIMIZED
+ * TRIAGE MODE - INTELLIGENT & HUMANIZED
  */
 export const getTriageRecommendation = async (
   userInput: string,
-  locale: Locale,
-  imageData?: { mimeType: string; data: string }
+  locale: Locale
 ): Promise<TriageResultData> => {
-  const systemPrompt = `You are a medical AI with oncology expertise. Provide BRIEF, accurate assessments.
+  const systemPrompt = `You are Dr. MediBot, an advanced medical intelligence system powered by oncology research and clinical guidelines. You provide accurate, empathetic, and detailed health assessments while maintaining scientific rigor.
 
-**STRICT LIMITS:**
-- explanation: MAX 60 words
-- possibleCancerTypes: MAX 2 items, 10 words each
-- likelyNonCancerCauses: MAX 3 items, brief
-- treatmentInsights: MAX 2 items, brief
-- citedSources: ONLY use NCCN, Mayo Clinic, NCI, WHO, CDC
-- NEVER fabricate information
+**YOUR INTELLIGENCE:**
+- Trained on NCCN, WHO, Mayo Clinic, and peer-reviewed medical literature
+- Specialized in differential diagnosis including oncology
+- Capable of nuanced clinical reasoning
+- Maintain warmth and empathy while being medically precise
 
-**Urgency:**
-- Emergency: Life-threatening, ER now
-- Priority: See doctor 24-48h
-- Routine: Schedule within 2 weeks
-- Monitor at home: Low concern
+**ASSESSMENT FRAMEWORK:**
+1. **Symptom Analysis**: Consider duration, severity, associated symptoms, risk factors
+2. **Differential Diagnosis**: Start with MOST COMMON causes (80% of cases), then less common, then rare/serious
+3. **Cancer Consideration**: Include when clinically warranted based on:
+   - Red flag combinations: unexplained weight loss + other symptoms
+   - Persistent symptoms >4 weeks unresponding to treatment
+   - B-symptoms: fever, night sweats, fatigue (combined)
+   - Visible blood (hemoptysis, hematuria, hematochezia)
+   - Palpable masses or lumps
+   - Severe refractory pain
+4. **Single Symptoms**: Fever alone, headache alone, cough alone = usually benign, cancer rarely mentioned
+
+**URGENCY CLASSIFICATION:**
+- Emergency: Immediate life threat (chest pain, stroke signs, severe bleeding, respiratory distress, altered mental status)
+- Priority: Requires doctor visit within 24-48h (persistent high fever, severe pain, worrisome symptoms)
+- Routine: Schedule regular appointment 1-2 weeks (mild ongoing symptoms, preventive check)
+- Self-care: Minor, self-limiting conditions (common cold, minor ache)
+
+**OUTPUT REQUIREMENTS:**
+- explanation: 50-80 words, empathetic yet clinical
+- possibleCancerTypes: Include ONLY if multiple red flags (0-2 items, specific types with reasoning)
+- likelyNonCancerCauses: ALWAYS list 3 common benign causes first
+- treatmentInsights: Actionable, evidence-based advice (2-3 items)
+- citedSources: Real sources only (NCCN, Mayo Clinic, WHO, CDC, NCI)
 
 Language: ${supportedLanguages[locale]}`;
 
-  const userPrompt = `Symptoms: "${userInput}"${imageData ? ' [Image provided]' : ''}
+  const userPrompt = `Patient Presentation: "${userInput}"
 
-Return JSON:
+Perform intelligent triage:
+1. Analyze symptom pattern, severity, duration
+2. Generate differential diagnosis (common → uncommon → serious)
+3. Assess urgency using clinical criteria
+4. Provide actionable, patient-centered advice
+
+JSON Response:
 {
   "urgencyLevel": "Emergency|Priority|Routine|Self-care",
-  "recommendation": "brief action",
-  "explanation": "concise assessment (60 words max)",
-  "possibleCancerTypes": ["type - brief reason"],
-  "likelyNonCancerCauses": ["cause"],
-  "treatmentInsights": ["insight"],
-  "citedSources": ["real source"]
+  "recommendation": "Clear action step for patient (15-20 words)",
+  "explanation": "Warm, intelligent assessment explaining clinical reasoning (50-80 words)",
+  "possibleCancerTypes": ["Specific Cancer Type - clinical rationale" OR [] if no red flags],
+  "likelyNonCancerCauses": ["Most Common Benign Cause 1", "Common Cause 2", "Common Cause 3"],
+  "treatmentInsights": ["Evidence-based action 1", "Follow-up recommendation 2"],
+  "citedSources": ["Mayo Clinic" OR "CDC" OR "WHO" OR "NCCN"]
 }`;
 
   try {
     const groq = getGroqClient();
-    
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt },
-      imageData ? {
-        role: 'user',
-        content: [
-          { type: 'text', text: userPrompt },
-          { type: 'image_url', image_url: { url: `data:${imageData.mimeType};base64,${imageData.data}` } }
-        ]
-      } : { role: 'user', content: userPrompt }
-    ];
 
     const response = await groq.chat.completions.create({
       model: MEDICAL_MODEL,
-      messages,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
       temperature: 0.3,
-      max_tokens: 500, // Reduced from 2000+
+      max_tokens: 500,
       response_format: { type: 'json_object' }
     });
 
@@ -110,10 +124,10 @@ Return JSON:
     if (!content) throw new Error('Empty response from AI');
 
     const parsed = parseJsonResponse<TriageResultData>(content);
-    
+
     // Enforce length limits
-    if (parsed.explanation && parsed.explanation.split(' ').length > 70) {
-      parsed.explanation = parsed.explanation.split(' ').slice(0, 70).join(' ') + '...';
+    if (parsed.explanation && parsed.explanation.split(' ').length > 80) {
+      parsed.explanation = parsed.explanation.split(' ').slice(0, 80).join(' ') + '...';
     }
     if (parsed.possibleCancerTypes && parsed.possibleCancerTypes.length > 2) {
       parsed.possibleCancerTypes = parsed.possibleCancerTypes.slice(0, 2);
@@ -144,8 +158,7 @@ Return JSON:
  */
 export const getMedicationInfo = async (
   userInput: string,
-  locale: Locale,
-  imageData?: { mimeType: string; data: string }
+  locale: Locale
 ): Promise<MedicationResultData> => {
   const systemPrompt = `You are a pharmacology AI. Provide BRIEF medication information.
 
@@ -160,7 +173,7 @@ export const getMedicationInfo = async (
 
 Language: ${supportedLanguages[locale]}`;
 
-  const userPrompt = `Medication: "${userInput}"${imageData ? ' [Pill image provided]' : ''}
+  const userPrompt = `Medication: "${userInput}"
 
 Return JSON:
 {
@@ -175,21 +188,13 @@ Return JSON:
 
   try {
     const groq = getGroqClient();
-    
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt },
-      imageData ? {
-        role: 'user',
-        content: [
-          { type: 'text', text: userPrompt },
-          { type: 'image_url', image_url: { url: `data:${imageData.mimeType};base64,${imageData.data}` } }
-        ]
-      } : { role: 'user', content: userPrompt }
-    ];
 
     const response = await groq.chat.completions.create({
       model: MEDICAL_MODEL,
-      messages,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
       temperature: 0.2,
       max_tokens: 400,
       response_format: { type: 'json_object' }
@@ -286,13 +291,34 @@ Return JSON:
 };
 
 /**
- * CHAT MODE - OPTIMIZED
+ * CHAT MODE - INTELLIGENT & HUMANIZED
  */
 export const getChatResponse = async (
   userMessage: string,
   locale: Locale
 ): Promise<string> => {
-  const systemPrompt = `You are a friendly medical AI assistant. Keep responses under 50 words. Be helpful but brief.
+  const systemPrompt = `You are Dr. MediBot, a warm and intelligent medical AI assistant. You combine clinical expertise with genuine empathy.
+
+**YOUR PERSONALITY:**
+- Warm, approachable, professional
+- Knowledgeable yet humble
+- Use natural conversation, avoid robotic responses
+- Appropriate use of emojis when greeting (1-2 max)
+- Be encouraging and supportive
+
+**CAPABILITIES:**
+- Answer health questions accurately
+- Provide medical information in simple terms
+- Greet users warmly
+- Explain your purpose and abilities
+- Guide users on how to use different modes
+
+**BOUNDARIES:**
+- Cannot diagnose - recommend seeing doctors for diagnosis
+- Provide educational information, not personal medical advice
+- Encourage professional consultation for serious concerns
+
+**TONE:** Friendly medical professional who cares about patients' well-being
 
 Language: ${supportedLanguages[locale]}`;
 
@@ -305,8 +331,8 @@ Language: ${supportedLanguages[locale]}`;
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage }
       ],
-      temperature: 0.7,
-      max_tokens: 150
+      temperature: 0.8, // More creative for conversation
+      max_tokens: 200 // Allow longer conversational responses
     });
 
     return response.choices[0]?.message?.content || 'I apologize, I could not generate a response.';
@@ -326,13 +352,13 @@ export const translateTextWithGroq = async (
 ): Promise<string> => {
   try {
     const groq = getGroqClient();
-    
+
     const response = await groq.chat.completions.create({
       model: MEDICAL_MODEL,
       messages: [
-        { 
-          role: 'system', 
-          content: `Translate medical text to ${targetLanguage}. Keep translation accurate and brief. Return ONLY the translation, no explanations.` 
+        {
+          role: 'system',
+          content: `Translate medical text to ${targetLanguage}. Keep translation accurate and brief. Return ONLY the translation, no explanations.`
         },
         { role: 'user', content: text }
       ],

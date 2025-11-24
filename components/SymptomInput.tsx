@@ -7,8 +7,8 @@ import type { AppMode } from '../types';
 declare global {
   interface Window { SpeechRecognition: typeof SpeechRecognition; webkitSpeechRecognition: typeof SpeechRecognition; }
   interface SpeechRecognitionAlternative { readonly transcript: string; readonly confidence: number; }
-  interface SpeechRecognitionResult { readonly isFinal: boolean; readonly length: number; item(index: number): SpeechRecognitionAlternative; [index: number]: SpeechRecognitionAlternative; }
-  interface SpeechRecognitionResultList { readonly length: number; item(index: number): SpeechRecognitionResult; [index: number]: SpeechRecognitionResult; }
+  interface SpeechRecognitionResult { readonly isFinal: boolean; readonly length: number; item(index: number): SpeechRecognitionAlternative;[index: number]: SpeechRecognitionAlternative; }
+  interface SpeechRecognitionResultList { readonly length: number; item(index: number): SpeechRecognitionResult;[index: number]: SpeechRecognitionResult; }
   interface SpeechRecognitionEvent extends Event { readonly resultIndex: number; readonly results: SpeechRecognitionResultList; }
   interface SpeechRecognitionErrorEvent extends Event { readonly error: string; readonly message: string; }
   interface SpeechRecognition extends EventTarget {
@@ -26,7 +26,7 @@ declare global {
 
 
 interface SymptomInputProps {
-  onSendMessage: (text: string, file?: File) => void;
+  onSendMessage: (text: string) => void; // Removed file parameter
   isLoading: boolean;
   mode: AppMode;
 }
@@ -34,9 +34,7 @@ interface SymptomInputProps {
 const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, mode }) => {
   const { t, locale } = useLanguage();
   const [text, setText] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Removed all file-related state
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -45,18 +43,18 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
   const prevIsRecording = useRef(isRecording);
 
   // Responsive placeholders - shorter for mobile
-  const currentPlaceholder = 
+  const currentPlaceholder =
     mode === 'triage' ? "Describe your symptoms..." :
-    mode === 'pharmacy' ? "Ask about medications..." :
-    mode === 'precautions' ? "Get health prevention tips..." :
-    "Ask MediBot anything...";
+      mode === 'pharmacy' ? "Ask about medications..." :
+        mode === 'precautions' ? "Get health prevention tips..." :
+          "Ask MediBot anything...";
 
   // Removed auto-resize effect to prevent layout shifts
   // Textarea now has fixed height with scroll
 
   useEffect(() => {
     if (prevIsRecording.current && !isRecording) {
-        textareaRef.current?.focus();
+      textareaRef.current?.focus();
     }
     prevIsRecording.current = isRecording;
   }, [isRecording]);
@@ -66,21 +64,7 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
     setText(e.target.value);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setFilePreview(URL.createObjectURL(selectedFile));
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setFile(null);
-    setFilePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+  // Removed file handling functions
 
   const handleMicClick = () => {
     if (!isSpeechSupported) {
@@ -127,34 +111,22 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isRecording) recognitionRef.current?.stop();
-    if (text.trim() || file) {
-      onSendMessage(text, file || undefined);
+    if (text.trim()) {
+      onSendMessage(text); // Removed file parameter
       setText('');
-      handleRemoveFile();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
-      <div style={{height:'18px',textAlign:'center'}}>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ height: '18px', textAlign: 'center' }}>
         {isRecording && (
-          <p style={{fontSize:'0.75rem',color:'#0ea5e9',animation:'subtlePulse 2.2s infinite'}}>{t('listeningLabel')}</p>
+          <p style={{ fontSize: '0.75rem', color: '#0ea5e9', animation: 'subtlePulse 2.2s infinite' }}>{t('listeningLabel')}</p>
         )}
       </div>
-      {filePreview && (
-        <div style={{position:'relative',width:'112px',height:'112px',borderRadius:'14px',overflow:'hidden',border:'2px solid rgba(51,65,85,.8)'}}>
-          <img src={filePreview} alt="Upload preview" style={{width:'100%',height:'100%',objectFit:'cover'}} />
-          <button
-            type="button" onClick={handleRemoveFile}
-            style={{position:'absolute',top:'4px',right:'4px',background:'rgba(0,0,0,.55)',color:'#fff',border:'none',borderRadius:'50%',padding:'4px',cursor:'pointer'}}
-            aria-label={t('removeImageLabel')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-      )}
-  <div className="chat-input-shell chat-compact">
-        <div className="chat-input-surface" style={{flexWrap:'wrap'}}>
+      {/* Removed file preview */}
+      <div className="chat-input-shell chat-compact">
+        <div className="chat-input-surface" style={{ flexWrap: 'wrap' }}>
           <textarea
             ref={textareaRef}
             value={text}
@@ -165,14 +137,7 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
             disabled={isLoading}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
           />
-          <input 
-            type="file" 
-            accept="image/*,.pdf,.doc,.docx,.txt,.rtf,.odt" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            style={{display:'none'}} 
-            id="file-upload" 
-          />
+          {/* Removed file upload input and button */}
           <button
             type="button"
             onClick={handleMicClick}
@@ -181,24 +146,14 @@ const SymptomInput: React.FC<SymptomInputProps> = ({ onSendMessage, isLoading, m
             aria-label={isRecording ? t('stopRecordingLabel') : t('recordSymptomsLabel')}
           >
             {isRecording ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
             ) : (
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" strokeWidth="1.7" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" /><path d="M8 22h8" /></svg>
             )}
           </button>
           <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading}
-            className="icon-btn upload-btn"
-            aria-label="Upload documents (PDF, DOCX, Images)"
-            title="📄 Upload medical documents, prescriptions, lab results (PDF, DOCX, Images)"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" strokeWidth="1.6" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32" /><path d="M8.55 18.31l-.01.01" /><path d="M13.54 8.37l-7.81 7.81a1.5 1.5 0 002.122 2.122l7.81-7.81" /></svg>
-          </button>
-          <button
             type="submit"
-            disabled={isLoading || (!text.trim() && !file)}
+            disabled={isLoading || !text.trim()}
             className="send-btn"
             aria-label={t('sendLabel')}
           >
