@@ -109,6 +109,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
       /(did|have)\s+you\s+(eat|have|had)\s+(lunch|dinner|breakfast|food)/i,
       /^(what|how)('?s|\s+is)\s+going\s+on/i,
       /^(you|u)\s+(doing|doin)\s+(good|well|okay|ok|fine)/i,
+      // Expanded conversational patterns
+      /^is\s+it\s+/i,
+      /^what\s+about\s+/i,
+      /^can\s+i\s+/i,
+      /^should\s+i\s+/i,
+      /^tell\s+me\s+/i,
+      /^explain\s+/i,
+      /^why\s+/i,
+      /^thanks?/i,
+      /^ok(ay)?/i,
+      /^cool/i,
+      /^wow/i,
     ];
 
     return casualPatterns.some(pattern => pattern.test(lower));
@@ -139,7 +151,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
     if (isGreeting(text) || isFarewell(text) || isThanks(text) || isCasualQuestion(text)) { // Removed file check
       // Use Groq AI for natural conversational responses
       try {
-        const aiReply = await getChatResponse(text, locale);
+        const aiReply = await getChatResponse(text, messages, locale);
 
         const aiMessage: ChatMessage = {
           id: `${Date.now()}-ai`,

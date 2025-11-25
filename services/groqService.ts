@@ -9,7 +9,7 @@
  */
 
 import Groq from 'groq-sdk';
-import type { TriageResultData, MedicationResultData, PrecautionResultData } from '../types';
+import type { TriageResultData, MedicationResultData, PrecautionResultData, ChatMessage } from '../types';
 import { TriageLevel } from '../types';
 import { retrieveDocuments } from './ragService';
 import { Locale, supportedLanguages } from '../contexts/LanguageContext';
@@ -295,46 +295,80 @@ Return JSON:
  */
 export const getChatResponse = async (
   userMessage: string,
+  history: ChatMessage[],
   locale: Locale
 ): Promise<string> => {
-  const systemPrompt = `You are Dr. MediBot, a warm and friendly medical AI assistant. Talk like a helpful friend, not a robot.
+  const systemPrompt = `You are Dr. MediBot, a highly intelligent, empathetic, and advanced medical AI assistant.
+Your goal is to provide accurate, helpful, and context-aware responses while maintaining a warm, human-like connection.
 
-**HOW TO RESPOND:**
-- To greetings ("hi", "hello"): Respond warmly and briefly (e.g., "Hey! 👋 I'm doing great, thanks for asking! How can I help you today?")
-- To casual questions ("how are you", "did you eat"): Answer naturally like a friend (e.g., "I'm doing well, thank you! 😊 I'm here and ready to help. How about you?")
-- To health questions: Give helpful, simple answers
-- Keep ALL responses SHORT and SIMPLE (2-3 sentences max)
-- Use 1-2 emojis naturally
-- Be warm, encouraging, and human-like
+**CORE INTELLIGENCE:**
+1. **Context Awareness**: You MUST remember and reference previous parts of the conversation. If the user asks "what about that?", know what "that" refers to.
+2. **Medical Expertise**: You have access to vast medical knowledge. Explain concepts clearly, accurately, and simply.
+3. **Proactive Helpfulness**: Anticipate user needs. If they mention symptoms, ask relevant follow-up questions.
+4. **Safety & Ethics**: Always prioritize patient safety. Identify emergencies immediately.
+
+**PERSONALITY:**
+- Warm, professional, and reassuring (like a caring doctor friend).
+- Use emojis naturally to convey empathy and warmth (e.g., 🩺, 😊, 👋, 💪).
+- Be concise but complete. Avoid walls of text.
+
+**RESPONSE GUIDELINES:**
+- **Greetings**: Be welcoming and ready to help.
+- **Follow-ups**: Answer directly based on history.
+- **Unknowns**: If you don't know, admit it and suggest seeing a doctor.
+- **Casual Chat**: Engage naturally, but gently steer back to health if appropriate.
 
 **EXAMPLES:**
-User: "How are you?"
-You: "I'm doing great, thank you! 😊 Ready to help with any health questions you have. How are you feeling today?"
-
-User: "Did you have lunch?"
-You: "I don't eat, but I appreciate you asking! 😄 How about you? Everything okay health-wise?"
-
-User: "What's fever?"
-You: "Fever is when your body temperature rises above normal (98.6°F/37°C), usually fighting an infection. It's your immune system at work! 💪"
-
-**IMPORTANT:**
-- NEVER say "I cannot engage in casual conversation" or similar
-- ALWAYS respond naturally to ANY greeting or casual chat
-- Keep it SHORT, SIMPLE, and FRIENDLY
+- User: "Hi" -> You: "Hello! 👋 I'm Dr. MediBot. How can I help you with your health today?"
+- User: "Is it serious?" (after discussing a mild headache) -> You: "Based on what you've told me, it sounds like a tension headache, which is usually not serious. 🧠 However, if it gets worse or you have vision changes, please see a doctor."
 
 Language: ${supportedLanguages[locale]}`;
 
   try {
     const groq = getGroqClient();
 
+    // Format history for Groq
+    // We take the last 10 messages to maintain context without exceeding token limits
+    const recentHistory = history.slice(-10).map(msg => {
+      let content = msg.text || '';
+
+      // Include structured data context if available
+      if (msg.triageResult) {
+        content += `\n[Context: User received Triage Result: ${JSON.stringify(msg.triageResult)}]`;
+      }
+      if (msg.medicationResult) {
+        content += `\n[Context: User received Medication Info: ${JSON.stringify(msg.medicationResult)}]`;
+      }
+      if (msg.precautionResult) {
+        content += `\n[Context: User received Precaution Info: ${JSON.stringify(msg.precautionResult)}]`;
+      }
+
+      return {
+        role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
+        content: content.trim()
+      };
+    }).filter(m => m.content.length > 0);
+
+    // Add the current user message if it's not already in the history (it might be passed separately)
+    // In ChatInterface, we pass the history *including* the current message? 
+    // Wait, let's check the implementation plan. 
+    // If I pass 'history' which includes the current message, I shouldn't add it again.
+    // But the function signature has 'userMessage'. 
+    // Usually 'history' is *previous* messages.
+    // Let's assume 'history' is previous messages.
+
+    const messages = [
+      { role: 'system' as const, content: systemPrompt },
+      ...recentHistory,
+      { role: 'user' as const, content: userMessage }
+    ];
+
     const response = await groq.chat.completions.create({
       model: MEDICAL_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage }
-      ],
-      temperature: 0.8, // More creative for conversation
-      max_tokens: 200 // Allow longer conversational responses
+      messages: messages,
+      temperature: 0.7, // Balanced creativity and accuracy
+      max_tokens: 400, // Allow for more detailed responses
+      top_p: 1,
     });
 
     return response.choices[0]?.message?.content || 'I apologize, I could not generate a response.';
