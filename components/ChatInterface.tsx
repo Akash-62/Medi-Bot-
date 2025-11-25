@@ -102,6 +102,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
       /^tell\s+me\s+about\s+(yourself|you)/i,
       /^are\s+you\s+(a\s+)?((real\s+)?doctor|bot|ai|robot)/i,
       /^what('?s|\s+is)\s+your\s+name/i,
+      // Casual conversation patterns
+      /^how\s+(are|r)\s+you/i,
+      /^how('?s|\s+is)\s+it\s+going/i,
+      /^you\s+(ok|okay|good|fine)/i,
+      /(did|have)\s+you\s+(eat|have|had)\s+(lunch|dinner|breakfast|food)/i,
+      /^(what|how)('?s|\s+is)\s+going\s+on/i,
+      /^(you|u)\s+(doing|doin)\s+(good|well|okay|ok|fine)/i,
     ];
 
     return casualPatterns.some(pattern => pattern.test(lower));
