@@ -5,7 +5,10 @@ import MedicationResult from './MedicationResult';
 import PrecautionResult from './PrecautionResult';
 import UserIcon from './icons/UserIcon';
 import BotIcon from './icons/BotIcon';
-
+import SpeakerIcon from './icons/SpeakerIcon';
+import { useLanguage, outputLanguages } from '../contexts/LanguageContext';
+import { speakWithResponsiveVoice, cancelSpeech, SupportedTTSLanguage } from '../services/ttsService';
+import { useState } from 'react';
 interface ChatMessageBubbleProps {
   message: ChatMessage;
   onSuggestionClick?: (text: string) => void;
@@ -13,6 +16,31 @@ interface ChatMessageBubbleProps {
 
 const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onSuggestionClick }) => {
   const isUser = message.sender === 'user';
+  const { locale } = useLanguage();
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const handleSpeak = () => {
+    if (isPlaying) {
+      cancelSpeech();
+      setIsPlaying(false);
+      return;
+    }
+
+    const textToSpeak = message.text || '';
+    // Determine voice code based on locale
+    const voiceCode = (outputLanguages[locale as keyof typeof outputLanguages]?.voiceCode || 'en-US') as SupportedTTSLanguage;
+
+    setIsPlaying(true);
+    speakWithResponsiveVoice(
+      textToSpeak,
+      voiceCode,
+      () => setIsPlaying(false), // onEnd
+      (err) => {
+        console.error('TTS Error:', err);
+        setIsPlaying(false);
+      }
+    );
+  };
 
   if (message.isTyping) {
     return (
@@ -36,8 +64,20 @@ const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({ message, onSugges
       </div>
       <div className={`rounded-2xl max-w-[85vw] sm:max-w-[75%] md:max-w-[70%] shadow-lg ${isUser ? 'bg-gradient-to-br from-cyan-600 to-blue-600' : 'bg-slate-800/60 backdrop-blur-md border border-slate-700/50'}`}>
         <div className={`p-4 rounded-2xl ${isUser ? 'text-white' : 'text-slate-100'}`}>
-          {message.text && <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>}
-          {/* Image preview removed */}
+          {message.text && (
+            <div className="relative">
+              <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>
+              {!isUser && message.text && (
+                <button
+                  onClick={handleSpeak}
+                  className={`absolute -bottom-2 -right-2 p-1.5 rounded-full transition-all duration-200 ${isPlaying ? 'bg-cyan-400 text-slate-900 animate-pulse' : 'bg-slate-700/50 text-slate-400 hover:text-cyan-300 hover:bg-slate-600'}`}
+                  title={isPlaying ? "Stop speaking" : "Read aloud"}
+                >
+                  <SpeakerIcon className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
           {message.triageResult && <TriageResult result={message.triageResult} />}
           {message.medicationResult && <MedicationResult result={message.medicationResult} />}
           {message.precautionResult && <PrecautionResult result={message.precautionResult} />}

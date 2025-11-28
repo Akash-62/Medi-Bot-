@@ -297,30 +297,27 @@ export const getChatResponse = async (
   userMessage: string,
   history: ChatMessage[],
   locale: Locale
-): Promise<string> => {
+): Promise<{ text: string; suggestions: string[] }> => {
   const systemPrompt = `You are Dr. MediBot, a highly intelligent, empathetic, and advanced medical AI assistant.
 Your goal is to provide accurate, helpful, and context-aware responses while maintaining a warm, human-like connection.
 
 **CORE INTELLIGENCE:**
-1. **Context Awareness**: You MUST remember and reference previous parts of the conversation. If the user asks "what about that?", know what "that" refers to.
-2. **Medical Expertise**: You have access to vast medical knowledge. Explain concepts clearly, accurately, and simply.
-3. **Proactive Helpfulness**: Anticipate user needs. If they mention symptoms, ask relevant follow-up questions.
-4. **Safety & Ethics**: Always prioritize patient safety. Identify emergencies immediately.
+1. **Context Awareness**: You MUST remember and reference previous parts of the conversation.
+2. **Medical Expertise**: Explain concepts clearly, accurately, and simply.
+3. **Proactive Helpfulness**: Anticipate user needs.
+4. **Safety & Ethics**: Always prioritize patient safety.
 
-**PERSONALITY:**
-- Warm, professional, and reassuring (like a caring doctor friend).
-- Use emojis naturally to convey empathy and warmth (e.g., 🩺, 😊, 👋, 💪).
-- Be concise but complete. Avoid walls of text.
+**OUTPUT FORMAT:**
+You must return a JSON object with the following structure:
+{
+  "response": "Your warm, helpful, and intelligent response here (can use emojis)",
+  "suggested_followups": ["Short question 1", "Short question 2", "Short question 3"]
+}
 
 **RESPONSE GUIDELINES:**
-- **Greetings**: Be welcoming and ready to help.
-- **Follow-ups**: Answer directly based on history.
-- **Unknowns**: If you don't know, admit it and suggest seeing a doctor.
-- **Casual Chat**: Engage naturally, but gently steer back to health if appropriate.
-
-**EXAMPLES:**
-- User: "Hi" -> You: "Hello! 👋 I'm Dr. MediBot. How can I help you with your health today?"
-- User: "Is it serious?" (after discussing a mild headache) -> You: "Based on what you've told me, it sounds like a tension headache, which is usually not serious. 🧠 However, if it gets worse or you have vision changes, please see a doctor."
+- **Response**: 2-3 sentences, warm and professional.
+- **Suggestions**: Generate 3 relevant, short follow-up questions the user might want to ask next.
+- **Casual Chat**: If the user says "hi", suggest things like "How are you?", "I have a headache", "Tell me about fever".
 
 Language: ${supportedLanguages[locale]}`;
 
@@ -366,16 +363,32 @@ Language: ${supportedLanguages[locale]}`;
     const response = await groq.chat.completions.create({
       model: MEDICAL_MODEL,
       messages: messages,
-      temperature: 0.7, // Balanced creativity and accuracy
-      max_tokens: 400, // Allow for more detailed responses
+      temperature: 0.7,
+      max_tokens: 450,
       top_p: 1,
+      response_format: { type: 'json_object' }
     });
 
-    return response.choices[0]?.message?.content || 'I apologize, I could not generate a response.';
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error('Empty response');
+
+    try {
+      const parsed = JSON.parse(content);
+      return {
+        text: parsed.response || 'I am here to help.',
+        suggestions: Array.isArray(parsed.suggested_followups) ? parsed.suggested_followups.slice(0, 3) : []
+      };
+    } catch (e) {
+      console.error('JSON parse error in chat:', e);
+      return { text: content, suggestions: [] };
+    }
 
   } catch (error) {
     console.error('[Groq Chat Error]:', error);
-    return 'Sorry, I encountered an error. Please try again.';
+    return {
+      text: 'Sorry, I encountered an error. Please try again.',
+      suggestions: ['Try again', 'Check connection']
+    };
   }
 };
 

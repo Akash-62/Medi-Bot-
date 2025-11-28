@@ -151,12 +151,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode }) => {
     if (isGreeting(text) || isFarewell(text) || isThanks(text) || isCasualQuestion(text)) { // Removed file check
       // Use Groq AI for natural conversational responses
       try {
-        const aiReply = await getChatResponse(text, messages, locale);
+        const { text: aiText, suggestions } = await getChatResponse(text, messages, locale);
 
         const aiMessage: ChatMessage = {
           id: `${Date.now()}-ai`,
           sender: 'ai',
-          text: aiReply,
+          text: aiText,
+          suggestions: suggestions.map(s => ({ text: s }))
         };
         setMessages(prev => prev.filter(m => m.id !== typingIndicatorId));
         setMessages(prev => [...prev, aiMessage]);

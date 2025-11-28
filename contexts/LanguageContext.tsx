@@ -8,6 +8,9 @@ export const outputLanguages = {
   'kn': { name: 'ಕನ್ನಡ', voiceCode: 'kn-IN' }, 'hi': { name: 'हिन्दी', voiceCode: 'hi-IN' },
   'ta': { name: 'தமிழ்', voiceCode: 'ta-IN' }, 'te': { name: 'తెలుగు', voiceCode: 'te-IN' },
   'ml': { name: 'മലയാളം', voiceCode: 'ml-IN' },
+  'en': { name: 'English', voiceCode: 'en-US' },
+  'es': { name: 'Español', voiceCode: 'es-ES' },
+  'fr': { name: 'Français', voiceCode: 'fr-FR' },
 };
 export type OutputLocale = keyof typeof outputLanguages;
 
@@ -26,7 +29,7 @@ const translations = {
   translatingLabel: { en: 'Translating', es: 'Traduciendo', fr: 'Traduction en cours' },
   originalLabel: { en: 'Original', es: 'Original', fr: 'Original' },
   interactionSource: { en: 'Source', es: 'Fuente', fr: 'Source' },
-  
+
   // --- Mode Specific ---
   modeTriage: { en: 'Triage', es: 'Triaje', fr: 'Triage' },
   modePharmacy: { en: 'Pharmacy', es: 'Farmacia', fr: 'Pharmacie' },
@@ -50,9 +53,9 @@ const translations = {
   triageSources: { en: 'Cited Sources', es: 'Fuentes Citadas', fr: 'Sources Citées' },
 
   // --- Pharmacy Mode ---
-    pharmacyInitialMessage1: { en: "Welcome to the Pharmacy. I can help identify medications.", es: "Bienvenido a la Farmacia. Puedo ayudar a identificar medicamentos.", fr: "Bienvenue à la Pharmacie. Je peux vous aider à identifier des médicaments." },
-    pharmacyInitialMessage2: { en: "Please type a medication name or upload a clear photo of a pill.", es: "Escribe el nombre de un medicamento o sube una foto clara de una pastilla.", fr: "Veuillez taper le nom d'un médicament ou télécharger une photo claire d'un comprimé." },
-    pharmacySuggestions: {
+  pharmacyInitialMessage1: { en: "Welcome to the Pharmacy. I can help identify medications.", es: "Bienvenido a la Farmacia. Puedo ayudar a identificar medicamentos.", fr: "Bienvenue à la Pharmacie. Je peux vous aider à identifier des médicaments." },
+  pharmacyInitialMessage2: { en: "Please type a medication name or upload a clear photo of a pill.", es: "Escribe el nombre de un medicamento o sube una foto clara de una pastilla.", fr: "Veuillez taper le nom d'un médicament ou télécharger une photo claire d'un comprimé." },
+  pharmacySuggestions: {
     en: [{ text: "What is Metformin used for?" }, { text: "Identify this pill" }],
     es: [{ text: "¿Para qué se usa la Metformina?" }, { text: "Identificar esta pastilla" }],
     fr: [{ text: "À quoi sert la Metformine ?" }, { text: "Identifier ce comprimé" }],
@@ -104,7 +107,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // This type assertion is safe because we control the structure
     return (translation?.[locale] || key) as typeof translations[K][Locale];
   };
-  
+
   const value = useMemo(() => ({ locale, setLocale, t }), [locale]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
